@@ -47,6 +47,8 @@ async def on_message(message):
     elif message.content.startswith('!lyanna'):
         await client.send_message(message.channel, 'Everyone carries in their own special way!')
     
+
+
     
 
 client.run('NDU4MjcxNTkzNjk3OTAyNjAy.DigfxA.V9Aqd7Hd6jZJk35A8s96J6ADPeE')

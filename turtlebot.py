@@ -36,7 +36,7 @@ async def on_message(message):
         await client.send_message(message.channel, 'There is no conclusion more natrual...')
         await client.send_message(message.channel, 'THAN DEATH')
     elif message.content.startswith('!isdhuumdead'):
-        await client.send_message(message.channel, 'Still alive :cry:')   
+        await client.send_message(message.channel, 'DHUUM IS FUCKING DEAD :D :D :D :D :D')   
     elif message.content.startswith('!schedule'): 
         await client.send_message(message.channel, 'Raids are at reset on Monday, and reset + 1 hour on Thursday')
         await client.send_message(message.channel, 'Reset is currently at 8pm Eastern US Time.')
@@ -45,9 +45,7 @@ async def on_message(message):
     elif message.content.startswith('!glenna'):
         await client.send_message(message.channel, 'I\'M NOT YOUR PUPPY!')
     elif message.content.startswith('!lyanna'):
-        await client.send_message(message.channel, 'Everyone carries in their own special way!')
-    
-
+        await client.send_message(message.channel, 'Everyone carries in their own special way'
 
     
 

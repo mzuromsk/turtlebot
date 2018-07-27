@@ -45,7 +45,7 @@ async def on_message(message):
     elif message.content.startswith('!glenna'):
         await client.send_message(message.channel, 'I\'M NOT YOUR PUPPY!')
     elif message.content.startswith('!lyanna'):
-        await client.send_message(message.channel, 'Everyone carries in their own special way'
+        await client.send_message(message.channel, 'Everyone carries in their own special way!')
 
     
 

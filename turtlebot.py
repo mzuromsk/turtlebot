@@ -1,53 +1,97 @@
 import discord
 import asyncio
+from discord.ext import commands
+
+import settings.config
+extensions = ['cogs.control']
 
 
-client = discord.Client()
-      
+
+class TurtleBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix=settings.config.PREFIX, case_insensitive=True)
+
+        for ext in extensions:
+            try:
+                self.load_extension(ext)
+            except Exception as e:
+                exc = '{}: {}'.format(type(e).__name__, e)
+                print('Failed to load extension {}\n{}'.format(ext, exc))
+
+    async def on_ready(self):
+        print('Connected to the server!')
+        print('Username: {0.name}\nID: {0.id}'.format(self.user))
+##        for guild in self.guilds:
+##            for channel in guild.channels:
+##                print('Channel ID: {0} | Channel Name: {1}'.format(channel.id,channel.name))
+##            print('-------------------')
+##            print('Users:')
+##            for member in guild.members:
+##                print('Member ID: {0} | Member Name: {1} | Member Nickname: {2}'.format(member.id, member.name, member.nick))
+
+    async def on_message(self, message):
+        if not message.author.bot:
+            await self.process_commands(message)
+
+        if message.content.startswith('!deleteme'):
+            await message.delete()
+
+        elif message.content.startswith('!help'):
+            await message.channel.send('List of currently active commands:')
+            await message.channel.send('type \'!schedule\' - will print the current raid schedule')
+            await message.channel.send('type \'!raidtime\' - CURRENTLY UNAVAILABLE')
+            await message.channel.send('type \'!pregame\' - ALSO UNAVAILBLE')
+
+        elif message.content.startswith('!raidtime'):
+            reply = await message.channel.send('currently borked, sorry')
+            await asyncio.sleep(5)
+            await message.delete()
+            await reply.delete()
+
+        elif message.content.startswith('!pregame'):
+            reply = await message.channel.send('currently borked, sorry')
+            await asyncio.sleep(5)
+            await message.delete()
+            await reply.delete()
+
+        elif message.content.startswith('!dhuum'):
+            embed = discord.Embed(title='DHUUM', colour=0xb30000)
+            embed.set_thumbnail(url='https://wiki.guildwars2.com/images/thumb/e/e9/Dhuum_full1.jpg/175px-Dhuum_full1.jpg')
+            embed.add_field(name='...', value='MORTALS.', inline=False)
+            embed.add_field(name='...', value='You believe yourselves saviors, naturally.', inline=False)
+            embed.add_field(name='...', value='You seek to write the conclusion of your legend.', inline=False)
+            embed.add_field(name='...', value='There is no conclusion more natural...', inline=False)
+            embed.add_field(name='...', value='THAN DEATH.', inline=False)
+            await message.channel.send(embed=embed)
+
+        elif message.content.startswith('!isdhuumdead'):
+            await message.channel.send('Still alive :cry:')
+
+        elif message.content.startswith('!schedule'):
+            await message.channel.send('Raids are at reset on Monday, and reset + 1 hour on Thursday')
+            await message.channel.send('Reset is currently at 8pm Eastern US Time.')
+
+        elif message.content.startswith('!kusi'):
+            kusi = message.channel.guild.get_member(191676838110691329)
+            if not kusi is None:
+                newstatus = kusi.nick.replace("Kusi","")
+                cleanedupstring = newstatus.lstrip()
+                await message.channel.send('Kusi\'s current status: {0}'.format(cleanedupstring))
+
+        elif message.content.startswith('!glenna'):
+            await message.channel.send('I\'M NOT YOUR PUPPY!')
+            await self
+
+        elif message.content.startswith('!lyanna'):
+            await message.channel.send('Everyone carries in their own special way!')
 
 
-@client.event
-async def on_ready():
-    print('Logged in as')
-    print(client.user.name)
-    print(client.user.id)
-    print('-=-=-=-=')
 
 
-@client.event
-async def on_message(message):
-    timestamp = message.timestamp
-    weekday = timestamp.weekday()
-    hour = timestamp.hour
-    if message.content.startswith('!help'): 
-        await client.send_message(message.channel, 'List of currently active commands:')
-        await client.send_message(message.channel, 'type \'!schedule\' - will print the current raid schedule')
-        await client.send_message(message.channel, 'type \'!raidtime\' - CURRENTLY UNAVAILABLE')
-        await client.send_message(message.channel, 'type \'!pregame\' - ALSO UNAVAILBLE')
-        #await client.send_message(message.channel, 'type \'!botinfo\' - bot will tell you its username')
-    elif message.content.startswith('!raidtime'):        
-        await client.send_message(message.channel, 'currently borked, sorry')
-    elif message.content.startswith('!pregame'):        
-        await client.send_message(message.channel, 'currently borked, sorry')     
-    elif message.content.startswith('!dhuum'): 
-        await client.send_message(message.channel, 'MORTALS.')
-        await client.send_message(message.channel, 'You believe yourselves saviors, naturally.')
-        await client.send_message(message.channel, 'You seek to write the conclusion of your legend.')
-        await client.send_message(message.channel, 'There is no conclusion more natrual...')
-        await client.send_message(message.channel, 'THAN DEATH')
-    elif message.content.startswith('!isdhuumdead'):
-        await client.send_message(message.channel, 'Still alive :cry:')   
-    elif message.content.startswith('!schedule'): 
-        await client.send_message(message.channel, 'Raids are at reset on Monday, and reset + 1 hour on Thursday')
-        await client.send_message(message.channel, 'Reset is currently at 8pm Eastern US Time.')
-    elif message.content.startswith('!kusi'): 
-        await client.send_message(message.channel, 'Kusi\'s status:  Flyboye.')
-    elif message.content.startswith('!glenna'):
-        await client.send_message(message.channel, 'I\'M NOT YOUR PUPPY!')
-    elif message.content.startswith('!lyanna'):
-        await client.send_message(message.channel, 'Everyone carries in their own special way!')
-    
-    
 
-client.run('NDU4MjcxNTkzNjk3OTAyNjAy.DigfxA.V9Aqd7Hd6jZJk35A8s96J6ADPeE')
+bot = TurtleBot()
+bot.run(settings.config.TOKEN)
+
+
+
 

@@ -71,13 +71,6 @@ class TurtleBot(commands.Bot):
             await message.channel.send('Raids are at reset on Monday, and reset + 1 hour on Thursday')
             await message.channel.send('Reset is currently at 8pm Eastern US Time.')
 
-        elif message.content.startswith('!kusi'):
-            kusi = message.channel.guild.get_member(191676838110691329)
-            if not kusi is None:
-                newstatus = kusi.nick.replace("Kusi","")
-                cleanedupstring = newstatus.lstrip()
-                await message.channel.send('Kusi\'s current status: {0}'.format(cleanedupstring))
-
         elif message.content.startswith('!glenna'):
             await message.channel.send('I\'M NOT YOUR PUPPY!')
             await self

@@ -13,7 +13,7 @@ if not discord.opus.is_loaded():
     discord.opus.load_opus()
 
 
-class Control:
+class VoiceControls:
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
@@ -128,9 +128,9 @@ class Control:
             print('Was not in a voice channel anyways.')
 
     @commands.command()
-    async def ping(self, ctx):
+    async def pingvoice(self, ctx):
         await ctx.send('Pong!')
 
 
 def setup(bot):
-    bot.add_cog(Control(bot))
+    bot.add_cog(VoiceControls(bot))

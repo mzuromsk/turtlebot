@@ -27,7 +27,7 @@ class Control:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('YDie.mp3'), after=lambda e: print('done', e))
+            self.vc.play(discord.FFmpegPCMAudio('audio/YDie.mp3'), after=lambda e: print('done', e))
             await asyncio.sleep(17)
             await self.vc.disconnect()
 
@@ -40,7 +40,7 @@ class Control:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('nogodpleaseno.mp3'), after=lambda e: print('done', e))
+            self.vc.play(discord.FFmpegPCMAudio('audio/nogodpleaseno.mp3'), after=lambda e: print('done', e))
             await asyncio.sleep(19)
             await self.vc.disconnect()
 
@@ -53,7 +53,7 @@ class Control:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('DhuumVoiceover.mp3'), after=lambda e: print('done', e))
+            self.vc.play(discord.FFmpegPCMAudio('audio/DhuumVoiceover.mp3'), after=lambda e: print('done', e))
             await asyncio.sleep(19)
             await self.vc.disconnect()
 
@@ -66,7 +66,7 @@ class Control:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('DhuumVoiceoverLoud.mp3'), after=lambda e: print('done', e))
+            self.vc.play(discord.FFmpegPCMAudio('audio/DhuumVoiceoverLoud.mp3'), after=lambda e: print('done', e))
             await asyncio.sleep(19)
             await self.vc.disconnect()
 
@@ -79,7 +79,7 @@ class Control:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('riversingsnahnahnahbackupvocals.mp3'), after=lambda e: print('done', e))
+            self.vc.play(discord.FFmpegPCMAudio('audio/riversingsnahnahnahbackupvocals.mp3'), after=lambda e: print('done', e))
             await asyncio.sleep(19)
             await self.vc.disconnect()
 
@@ -106,9 +106,9 @@ class Control:
                 await ctx.send("  Eat your {2} min food & utility!   |  {0}\'s Reminder #{3} of {4}  | Started in channel {1}".format(ctx.message.author.name, starting_channel, timerlength, count+1, limit))
                 rnum = random.randint(0,2)
                 if rnum<2:
-                    self.vc.play(discord.FFmpegPCMAudio('EatFoodBritishLady.mp3'), after=lambda e: print('done', e))
+                    self.vc.play(discord.FFmpegPCMAudio('audio/EatFoodBritishLady.mp3'), after=lambda e: print('done', e))
                 else:
-                    self.vc.play(discord.FFmpegPCMAudio('EatFoodBritishGent.mp3'), after=lambda e: print('done', e))
+                    self.vc.play(discord.FFmpegPCMAudio('audio/EatFoodBritishGent.mp3'), after=lambda e: print('done', e))
 
                 count = count + 1
                 await asyncio.sleep(timerlength*60)

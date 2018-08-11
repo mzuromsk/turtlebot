@@ -1,6 +1,6 @@
 import discord
 import asyncio
-
+import turtle_credentials as tc
 
 client = discord.Client()
       
@@ -22,13 +22,28 @@ async def on_message(message):
     if message.content.startswith('!help'): 
         await client.send_message(message.channel, 'List of currently active commands:')
         await client.send_message(message.channel, 'type \'!schedule\' - will print the current raid schedule')
-        await client.send_message(message.channel, 'type \'!raidtime\' - CURRENTLY UNAVAILABLE')
-        await client.send_message(message.channel, 'type \'!pregame\' - ALSO UNAVAILBLE')
-        #await client.send_message(message.channel, 'type \'!botinfo\' - bot will tell you its username')
+        await client.send_message(message.channel, 'type \'!raidtime\' -  will tell you how long until the next raid')
+        await client.send_message(message.channel, 'type \'!pregame\' - will tell you how long until you should start drinking for the next raid')        
     elif message.content.startswith('!raidtime'):        
-        await client.send_message(message.channel, 'currently borked, sorry')
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        cur.execute("""WITH next_raid AS (SELECT min(time_of_raid) as next_raid_time FROM turtle.raid_schedule WHERE is_raid AND time_of_raid > NOW() - INTERVAL '4 hour') SELECT  next_raid_time - (now() - INTERVAL '4 hour') FROM next_raid""")
+        result = cur.fetchall()
+        await client.send_message(message.channel, 'The next raid is in:')
+        await client.send_message(message.channel, result[0][0])
     elif message.content.startswith('!pregame'):        
-        await client.send_message(message.channel, 'currently borked, sorry')     
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        cur.execute("""WITH next_raid AS (SELECT min(time_of_raid) as next_raid_time FROM turtle.raid_schedule WHERE is_raid AND time_of_raid > NOW() - INTERVAL '4 hour') SELECT  next_raid_time - (now() - INTERVAL '4 hour') - INTERVAL '1 hour' FROM next_raid""")
+        result = cur.fetchall()
+        await client.send_message(message.channel, 'Start drinking in:')
+        await client.send_message(message.channel, result[0][0])     
     elif message.content.startswith('!dhuum'): 
         await client.send_message(message.channel, 'MORTALS.')
         await client.send_message(message.channel, 'You believe yourselves saviors, naturally.')
@@ -46,8 +61,10 @@ async def on_message(message):
         await client.send_message(message.channel, 'I\'M NOT YOUR PUPPY!')
     elif message.content.startswith('!lyanna'):
         await client.send_message(message.channel, 'Everyone carries in their own special way!')
-
     
 
-client.run('NDU4MjcxNTkzNjk3OTAyNjAy.DigfxA.V9Aqd7Hd6jZJk35A8s96J6ADPeE')
+print('connecting')
+private_key = tc.get_pk()#grabs the private token for turtlebot
+client.run(private_key)
+
 

@@ -1,1 +1,10 @@
 turtle_credentials.py
+turtle_credentials_phantom.py
+*.pc
+
+*.pyc
+
+*.pyo
+
+__pycache__
+

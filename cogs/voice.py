@@ -100,7 +100,7 @@ class VoiceControls:
                 await self.vc.move_to(ctx.message.author.voice.channel)
 
             await ctx.message.delete()
-            self.vc.play(discord.FFmpegPCMAudio('audio/riversingsnahnahnahbackupvocals.mp3'))
+            self.vc.play(discord.FFmpegPCMAudio('audio/riversingsnahnah.mp3'))
             await asyncio.sleep(10)
             await self.vc.disconnect()
 

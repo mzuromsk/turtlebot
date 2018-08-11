@@ -44,16 +44,26 @@ class TurtleBot(commands.Bot):
             await message.channel.send('type \'!pregame\' - ALSO UNAVAILBLE')
 
         elif message.content.startswith('!raidtime'):
-            reply = await message.channel.send('currently borked, sorry')
-            await asyncio.sleep(5)
-            await message.delete()
-            await reply.delete()
+            try:
+                conn
+            except NameError:
+                conn = tc.get_conn()
+            cur = conn.cursor()
+            cur.execute("""WITH next_raid AS (SELECT min(time_of_raid) as next_raid_time FROM turtle.raid_schedule WHERE is_raid AND time_of_raid > NOW() - INTERVAL '4 hour') SELECT  next_raid_time - (now() - INTERVAL '4 hour') FROM next_raid""")
+            result = cur.fetchall()
+            await client.send_message(message.channel, 'The next raid is in:')
+            await client.send_message(message.channel, result[0][0])
 
         elif message.content.startswith('!pregame'):
-            reply = await message.channel.send('currently borked, sorry')
-            await asyncio.sleep(5)
-            await message.delete()
-            await reply.delete()
+            try:
+                conn
+            except NameError:
+                conn = tc.get_conn()
+            cur = conn.cursor()
+            cur.execute("""WITH next_raid AS (SELECT min(time_of_raid) as next_raid_time FROM turtle.raid_schedule WHERE is_raid AND time_of_raid > NOW() - INTERVAL '4 hour') SELECT  next_raid_time - (now() - INTERVAL '4 hour') - INTERVAL '1 hour' FROM next_raid""")
+            result = cur.fetchall()
+            await client.send_message(message.channel, 'Start drinking in:')
+            await client.send_message(message.channel, result[0][0])
 
         elif message.content.startswith('!dhuumtypes'):
             embed = discord.Embed(title='DHUUM', colour=0xb30000)

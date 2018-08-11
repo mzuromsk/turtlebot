@@ -72,7 +72,7 @@ class TurtleBot(commands.Bot):
             await message.channel.send('Reset is currently at 8pm Eastern US Time.')
 
         elif message.content.startswith('!glenna'):
-            await message.channel.send('I\'M NOT YOUR PUPPY!')
+            await message.channel.send('/tts I\'M NOT YOUR PUPPY!')
             await self
 
         elif message.content.startswith('!lyanna'):

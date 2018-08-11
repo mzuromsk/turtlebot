@@ -1,11 +1,10 @@
 import discord
 import asyncio
-<<<<<<< HEAD
 import turtle_credentials as tc
-=======
+
 import turtlecheck
 
->>>>>>> renay/audio_branch
+
 from discord.ext import commands
 
 class UtilityControls:
@@ -17,7 +16,7 @@ class UtilityControls:
     async def pingutility(self, ctx):
         await ctx.send('Pong!')
 
-<<<<<<< HEAD
+
     @commands.command()
     async def get_roster(self, ctx):
         #TODO:  MAKE THIS WORK WHEN THE ROSTER ISN'T BLANK
@@ -61,7 +60,7 @@ class UtilityControls:
                                 await ctx.send('Finished creating record and roles for: ' + turtle[1])
                                 
                                 
-=======
+
     @commands.command(description="This shuts down the bot process. Contact a bot administrator [Rev, Renay] if you need the bot shutdown.", brief="Shut down turtlebot. Requires bot administrator privileges.")
     @commands.check(turtlecheck.if_admin)
     async def shutdown(self, ctx):
@@ -69,7 +68,36 @@ class UtilityControls:
         await self.bot.logout()
         await self.bot.close()
 
->>>>>>> renay/audio_branch
+
 
 def setup(bot):
     bot.add_cog(UtilityControls(bot))
+
+def check_if_turtle_exists(turtle_id):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM turtle.turtles WHERE discord_id = " + str(turtle_id) + ";")
+    result = cur.fetchall()
+    
+    try:
+        print(result[0][0])
+        return True
+    except IndexError:
+        return False
+    
+
+
+def add_all_roles(turtle_id, roles, conn, cur):
+    try:
+        conn
+    except NameError:
+                                    conn = tc.get_conn()
+
+    for role in roles:
+        sqlStr = "INSERT INTO turtle.turtle_roles(role_id, turtle_id) VALUES (" + str(role.id) + ", " + str(turtle_id) + ");"
+        cur.execute(sqlStr)
+        conn.commit()
+        

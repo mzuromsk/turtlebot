@@ -2,6 +2,8 @@ import discord
 import asyncio
 import turtlecheck
 from discord.ext import commands
+import psycopg2
+import turtle_credentials as tc
 
 class ApiControls:
     def __init__(self, bot):
@@ -30,8 +32,39 @@ class ApiControls:
         except asyncio.TimeoutError:
             await ctx.author.send('Sorry. You took to long to enter your key. If you would like to retry, re-enter the command in a text channel and the bot will re-message you.')
         else:
-            await ctx.author.send('You entered the following GW2 API key: `{0}` ```\nThis key has been linked to your discord username. If you would like to update it in the future, just re-run this command from any text channel.```'.format(ans.content))
-            #TODO: Add some kind of input check and add the GW2 API key to the database
+            api_key = ans.content
+            discord_id = ctx.author.id
+            if check_valid_api_key(api_key):   
+                #try:
+                    try:
+                        conn
+                    except NameError:
+                        conn = tc.get_conn()
+                    cur = conn.cursor()
+                    #get the id of any existing key for this person
+                    sqlStr = "SELECT id FROM turtle.api_keys WHERE discord_id = " + str(discord_id)
+                    cur.execute(sqlStr)
+                    result = cur.fetchall()
+                    try:
+                        to_be_deleted = result[0][0]
+                        if to_be_deleted is None:
+                            to_be_deleted = -1
+                    except:
+                        to_be_deleted = -1
+                    sqlStr = "INSERT INTO turtle.api_keys (discord_id, api_key) VALUES (" + str(discord_id) + ", '" + api_key + "');"
+                    cur.execute(sqlStr)
+                    conn.commit()
+                    #now that we've successfully inserted, delete the previous key
+                    if to_be_deleted != -1:
+                        sqlStr = "DELETE FROM turtle.api_keys WHERE id = " + str(to_be_deleted)
+                        print(sqlStr)
+                        cur.execute(sqlStr)
+                        conn.commit()
+                    await ctx.author.send('You entered the following GW2 API key: `{0}` ```\nThis key has been linked to your discord username. If you would like to update it in the future, just re-run this command from any text channel.```'.format(ans.content))
+                #except:
+                   #await ctx.author.send('Something went wrong.  Tell Rev, he wrote this part')
+            else:
+                await ctx.author.send('That API key looks like it is the wrong length, or something.  Ask Rev to take a look')
 
         await message.delete()
 
@@ -56,12 +89,44 @@ class ApiControls:
             await ctx.author.send('Sorry. You took to long to select your choice. If you would like to retry, re-enter the command in a text channel and the bot will re-message you.')
         else:
             if str(ans.emoji) == '✅':
-                await ctx.author.send('Your GW2 API key has been deleted.')
-                #TODO: Clear GW2 API key from the database
-
+                sqlStr = "DELETE FROM turtle.api_keys WHERE discord_id = " + str(ctx.author.id)
+                try:
+                    conn
+                except NameError:
+                    conn = tc.get_conn()
+                cur = conn.cursor()
+                cur.execute(sqlStr)
+                conn.commit()
+                await ctx.author.send('Your GW2 API key has been deleted.')                
             if str(ans.emoji) == '❌':
                 await ctx.author.send('Your GW2 API key has been preserved...for now.')
         await message.delete()
+        
+
+def get_api_key(discord_id):
+    try:
+        sqlStr = "SELECT api_key FROM turtle.api_keys WHERE discord_id = "  + str(discord_id)
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        cur.execute(sqlStr)
+        result = cur.fetchall()
+        try:
+            return result[0][0]
+        except:
+            return None
+    except:
+        return None
 
 def setup(bot):
     bot.add_cog(ApiControls(bot))
+
+
+def check_valid_api_key(key):
+    try:
+        return len(key) == 72
+    except:
+        return False
+    return False

@@ -35,7 +35,7 @@ class ApiControls:
             api_key = ans.content
             discord_id = ctx.author.id
             if check_valid_api_key(api_key):   
-                #try:
+                try:
                     try:
                         conn
                     except NameError:
@@ -61,8 +61,8 @@ class ApiControls:
                         cur.execute(sqlStr)
                         conn.commit()
                     await ctx.author.send('You entered the following GW2 API key: `{0}` ```\nThis key has been linked to your discord username. If you would like to update it in the future, just re-run this command from any text channel.```'.format(ans.content))
-                #except:
-                   #await ctx.author.send('Something went wrong.  Tell Rev, he wrote this part')
+                except:
+                   await ctx.author.send('Something went wrong.  Tell Rev, he wrote this part')
             else:
                 await ctx.author.send('That API key looks like it is the wrong length, or something.  Ask Rev to take a look')
 

@@ -11,7 +11,7 @@ async def if_admin(ctx):
         return False
 
 async def if_seaguard(ctx):
-    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id():
+    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id() or ctx.message.author.id == tc.get_kusi_id():
         return True
     for role in ctx.message.author.roles:
         #Check if seaguard
@@ -22,7 +22,7 @@ async def if_seaguard(ctx):
     return False
 
 async def if_mod(ctx):
-    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id():
+    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id() or ctx.message.author.id == tc.get_kusi_id():
         return True
     for role in ctx.message.author.roles:
         if role.id == tc.get_mod_id():
@@ -32,7 +32,7 @@ async def if_mod(ctx):
     return False
 
 async def if_raider(ctx):
-    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id():
+    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id() or ctx.message.author.id == tc.get_kusi_id():
         return True
     for role in ctx.message.author.roles:
         #Check if seaguard

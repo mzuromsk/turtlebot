@@ -2,10 +2,10 @@ import discord
 import asyncio
 from discord.ext import commands
 
-import turtle_credentials as tc
-#import turtle_credentials_phantom as tc
+#import turtle_credentials as tc
+import turtle_credentials_phantom as tc
 
-extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util']
+extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util', 'cogs.grandturtlegame']
 
 class TurtleBot(commands.Bot):
     def __init__(self):
@@ -26,6 +26,11 @@ class TurtleBot(commands.Bot):
     async def on_message(self, message):
         if not message.author.bot:
             await self.process_commands(message)
+        if message.content.startswith('$game'):
+            try:
+                await message.delete()
+            except:
+                return
 
 token = tc.get_pk()
 

@@ -5,6 +5,8 @@ from discord.ext import commands
 import psycopg2
 import turtle_credentials as tc
 
+from .exceptions import (APIError, APIBadRequest, APIConnectionError, APIForbidden, APIInactiveError, APIInvalidKey, APINotFound)
+
 class ApiControls:
     def __init__(self, bot):
         self.bot = bot
@@ -13,6 +15,115 @@ class ApiControls:
     @commands.check(turtlecheck.if_seaguard)
     async def pingapi(self, ctx):
         await ctx.send('Pong!')
+
+    async def boss_embed(self, ctx, raids, results):
+        def is_killed(boss):
+            return "+✔" if boss["id"] in results else "-✖"
+
+        def readable_id(_id):
+            _id = _id.split("_")
+            dont_capitalize = ("of", "the", "in")
+            return " ".join([x.capitalize() if x not in dont_capitalize else x for x in _id])
+
+        not_completed = []
+        embed = discord.Embed(title="Bosses")
+        for raid in raids:
+            for wing in raid["wings"]:
+                wing_done = True
+                value = ["```diff"]
+                for boss in wing["events"]:
+                    if boss["id"] not in results:
+                        wing_done = False
+                        not_completed.append(boss)
+                    value.append(is_killed(boss) + readable_id(boss["id"]))
+                value.append("```")
+                name = readable_id(wing["id"])
+                if wing_done:
+                    name += " :white_check_mark:"
+                else:
+                    name += " :x:"
+                embed.add_field(name=name, value="\n".join(value))
+        if len(not_completed) == 0:
+            description = "Everything completed this week :star:"
+        else:
+            bosses = list(filter(lambda b: b["type"] == "Boss", not_completed))
+            events = list(
+                filter(lambda b: b["type"] == "Checkpoint", not_completed))
+            if bosses:
+                suffix = ""
+                if len(bosses) > 1:
+                    suffix = "es"
+                bosses = "{} boss{}".format(len(bosses), suffix)
+            if events:
+                suffix = ""
+                if len(events) > 1:
+                    suffix = "s"
+                events = "{} event{}".format(len(events), suffix)
+            description = (", ".join(filter(None, [bosses, events])) +
+                           " not completed this week")
+        embed.description = description
+        embed.set_footer(text="Green (+) means completed this week. Red (-) "
+                         "means not")
+        return embed
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def raid_bosses(self,ctx):
+
+        raids = []
+        #TODO: Update this part to just pull the raids list from a cache in the database rather than fetching it again everytime
+        raids_index = await self.call_api("raids")
+        for raid in raids_index:
+            raids.append(await self.call_api("raids/" + raid))
+
+        endpoint = "account/raids"
+        try:
+            api_key = get_api_key(ctx.author.id)
+            results = await self.call_api(endpoint, key=api_key)
+        except APIError as e:
+            return await self.bot.error_handler(ctx, e)
+
+        embed = await self.boss_embed(ctx, raids, results)
+        embed.set_author(name=ctx.author.name)
+        await ctx.send("{.mention}, here are your raid bosses:".format(ctx.author), embed=embed)
+
+
+    async def call_api(self, endpoint, key=None):
+        headers = {
+            'User-Agent': "Turtlebot - a Discord bot",
+            'Accept': 'application/json'
+        }
+        if key:
+            headers.update({"Authorization": "Bearer " + key})
+        apiserv = 'https://api.guildwars2.com/v2/'
+        url = apiserv + endpoint
+        async with self.bot.session.get(url, headers=headers) as r:
+            if r.status != 200 and r.status != 206:
+                try:
+                    err = await r.json()
+                    err_msg = err["text"]
+                except:
+                    err_msg = ""
+                if r.status == 400:
+                    if err_msg == "invalid key":
+                        raise APIInvalidKey("Invalid key")
+                    raise APIBadRequest("Bad request")
+                if r.status == 404:
+                    raise APINotFound("Not found")
+                if r.status == 403:
+                    if err_msg == "invalid key":
+                        raise APIInvalidKey("Invalid key")
+                    raise APIForbidden("Access denied")
+                if r.status == 503 and err_msg == "API not active":
+                    raise APIInactiveError("API is dead")
+                if r.status == 429:
+                    self.log.error("API Call limit saturated")
+                    raise APIConnectionError(
+                        "Requests limit has been saturated. Try again later.")
+                else:
+                    raise APIConnectionError("{} {}".format(r.status, err_msg))
+            return await r.json()
+
 
     @commands.command(description="After entering this command, the bot will direct message the user to request a GW2 API key. This key will be saved in a database and linked with the discord account. Future bot commands will query the GW2 API for your account.", brief = "Set a GW2 API key to be used for API discord commands.")
     @commands.check(turtlecheck.if_seaguard)
@@ -34,7 +145,7 @@ class ApiControls:
         else:
             api_key = ans.content
             discord_id = ctx.author.id
-            if check_valid_api_key(api_key):   
+            if check_valid_api_key(api_key):
                 try:
                     try:
                         conn
@@ -97,11 +208,11 @@ class ApiControls:
                 cur = conn.cursor()
                 cur.execute(sqlStr)
                 conn.commit()
-                await ctx.author.send('Your GW2 API key has been deleted.')                
+                await ctx.author.send('Your GW2 API key has been deleted.')
             if str(ans.emoji) == '❌':
                 await ctx.author.send('Your GW2 API key has been preserved...for now.')
         await message.delete()
-        
+
 
 def get_api_key(discord_id):
     try:

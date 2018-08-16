@@ -15,6 +15,11 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
     async def game_test_update_gameturn(self, ctx, turn=0):
+        #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         out = 'Just click the checkmark already. '
         try:
@@ -52,6 +57,11 @@ class GrandTurtleGameControls:
     @commands.check(turtlecheck.if_seaguard)
     #TODO: Figure out if there is a way to catch the cooldown error. It currently nicely prints out a You are on cooldown. Try again in [time]. It would be nice to send that to ctx.
     async def game_example_send_audio_pickone(self, ctx):
+        #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         out = 'You stand at the center of Divinity\'s Reach. To unlock the next clue, select the correct direction from the choices below based on the audio hint. \n\n**Answer advice: you only get to pick one answer. The first reaction you click will be your selection.** \n\n*Be careful, if you choose wrong, you will have to re-enter this command in a text window again (but it has a cooldown of 3 minutes).*\n\n\n\n'
         reactionout = 'Choose the correct direction from the indicated choices by clicking that reaction.'
@@ -90,6 +100,11 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
     async def game_example_send_picture_clue(self, ctx):
+        #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         out = 'Pack something warm. To unlock the next clue, enter the answer to the following question. (Use the image to guide you). \n\n**What is the name of the next closest point of interest following the road that crosses between feline and fowl?** \n\n[Format advice: enter the name of the POI as written in game, not as a discord command. Watch your spelling and punctuation!]\n\n'
         image = discord.File('images/Wayfarer.png')
@@ -129,6 +144,11 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True, description="After entering this command, the bot will direct message the user to request a GW2 API key. This key will be saved in a database and linked with the discord account. Future bot commands will query the GW2 API for your account.", brief = "Set a GW2 API key to be used for API discord commands.")
     @commands.check(turtlecheck.if_seaguard)
     async def game_example_combination_lock(self, ctx):
+        #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         out = 'Please enter the correct combination. You only get one try.'
         try:
@@ -185,7 +205,7 @@ class GrandTurtleGameControls:
 
     @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
     @commands.check(turtlecheck.if_seaguard)
-    async def game_leaderboardmockup(self, ctx):
+    async def leaderboardmockup(self, ctx):
 
         embed = discord.Embed(title='__**The Leaderboard  |  Grand Siege Turtle Games: Season 1**__', colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1')
         embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
@@ -204,22 +224,13 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
     @commands.check(turtlecheck.if_seaguard)
     async def game_initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
+        #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
-        title_string = '__** Leaderboard  |  ' + name + '**__'
-
-        embed = discord.Embed(title=title_string, colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1')
-        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-        embed.set_footer(text='No turtles have made it onto the leaderboard. Yet.', icon_url='https://cdn.discordapp.com/attachments/471547983859679232/478072773659328524/108145_time_512x512.png')
-
-        leaderboard = await ctx.send(embed=embed)
-        leaderboard_message_id = leaderboard.id
-        leaderboard_name = name
-
-        #TODO: Add the leaderboard_message_id and leaderboard_name to a db lookup table
-        #
-        #
-        #
-        #
+        leaderboard = await self.initialize_leaderboard(ctx, name)
 
     #This is a version of the command that can be called by other commands as needed if an active leaderboard can't be found
     async def initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):

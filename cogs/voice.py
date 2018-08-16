@@ -104,6 +104,52 @@ class VoiceControls:
 
             await asyncio.sleep(18)
             await self.vc.disconnect()
+            
+    @commands.command(description="Plays the renay's fault ditty [Note: User must be in a voice channel to summon the bot.]", brief="You know which one this is.")
+    @commands.check(turtlecheck.if_seaguard)
+    async def renaysfault(self, ctx):
+        if ctx.message.author.voice is not None:
+            try:
+                self.vc = await ctx.message.author.voice.channel.connect()
+            except:
+                await self.vc.move_to(ctx.message.author.voice.channel)
+
+            await ctx.message.delete()
+            self.vc.play(discord.FFmpegPCMAudio('audio/renaysfault_short.mp3'))
+
+            await asyncio.sleep(12)
+            await self.vc.disconnect()
+
+            
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def renaysfault_long(self, ctx):
+        if ctx.message.author.voice is not None:
+            try:
+                self.vc = await ctx.message.author.voice.channel.connect()
+            except:
+                await self.vc.move_to(ctx.message.author.voice.channel)
+
+            await ctx.message.delete()
+            self.vc.play(discord.FFmpegPCMAudio('audio/renaysfault.mp3'))
+
+            await asyncio.sleep(27)
+            await self.vc.disconnect()
+            
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def renaysfault_river(self, ctx):
+        if ctx.message.author.voice is not None:
+            try:
+                self.vc = await ctx.message.author.voice.channel.connect()
+            except:
+                await self.vc.move_to(ctx.message.author.voice.channel)
+
+            await ctx.message.delete()
+            self.vc.play(discord.FFmpegPCMAudio('audio/RenaysFault_sp.mp3'))
+
+            await asyncio.sleep(17)
+            await self.vc.disconnect()
 
 
     @commands.command(description="Starts a text and vocal food timer. The timer defaults to 30 minutes. The command accepts arguments for the length of time before reminder and how many repetitions as follows: startfoodtimer [time in minutes] [# of reminders]. Defaults to 30 minutes and 4 reminders. [Note: User must be in a voice channel to summon the bot.]", brief="Starts a food timer. Defaults to reminders for 30 minute food.")

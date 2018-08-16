@@ -2,6 +2,10 @@ import discord
 import asyncio
 import turtlecheck
 from discord.ext import commands
+import psycopg2
+import turtle_credentials as tc
+
+
 
 class GrandTurtleGameControls:
     def __init__(self, bot):
@@ -96,6 +100,29 @@ class GrandTurtleGameControls:
                 await ctx.author.send('Sorry, you didn\'t make the correct selection, you can try again after the 3 minute cooldown is up on this command.')
         await message.delete()
 
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def print_active_leaderboard_message_id(self, ctx):
+        #await ctx.author.send("active leaderboard id message id:")
+        print(get_active_leaderboard_message_id())
+        await ctx.author.send(get_active_leaderboard_message_id())
+
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def delete_active_game_leaderboard_message_from_database(self, ctx):
+        game_id = get_active_game()
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        sqlStr = "DELETE FROM turtle.game_messages WHERE game_id = " + str(game_id) + ";"
+        print(sqlStr)
+        cur.execute(sqlStr)
+        conn.commit()
+        
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
@@ -221,7 +248,7 @@ class GrandTurtleGameControls:
         embed.add_field(name='9) **Turtle**', value='__**|#1|#2|**__', inline=False)
         await ctx.send(embed=embed)
 
-    @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
+    @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
     async def game_initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
         #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
@@ -230,7 +257,32 @@ class GrandTurtleGameControls:
         except:
             pass
 
+
+        title_string = '__** Leaderboard  |  ' + name + '**__'
+
+        embed = discord.Embed(title=title_string, colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1')
+        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+        embed.set_footer(text='No turtles have made it onto the leaderboard. Yet.', icon_url='https://cdn.discordapp.com/attachments/471547983859679232/478072773659328524/108145_time_512x512.png')
+
+        leaderboard = await ctx.send(embed=embed)
+        leaderboard_message_id = leaderboard.id
+        leaderboard_name = name
+        game_id = get_active_game()
+
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        sqlStr = "INSERT INTO turtle.game_messages (game_id, message_id, message_name) VALUES (" + str(game_id) + ", " + str(leaderboard_message_id) + ", '" + name + "');"
+        print(sqlStr)
+        cur.execute(sqlStr)
+        conn.commit()
+     
+        
+
         leaderboard = await self.initialize_leaderboard(ctx, name)
+
 
     #This is a version of the command that can be called by other commands as needed if an active leaderboard can't be found
     async def initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
@@ -331,3 +383,36 @@ class GrandTurtleGameControls:
 
 def setup(bot):
     bot.add_cog(GrandTurtleGameControls(bot))
+
+    
+def get_active_game():
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+    cur = conn.cursor()
+    sqlStr = "SELECT game_id FROM turtle.grand_games WHERE is_active = TRUE;"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        return result[0][0]
+    except:
+        return -1
+
+def get_active_leaderboard_message_id():
+    game_id = get_active_game()
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+    cur = conn.cursor()
+    sqlStr = "SELECT message_id FROM turtle.game_messages WHERE game_id = " + str(game_id) + ";"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        return result[0][0]
+    except:
+        return -1
+        
+        
+        

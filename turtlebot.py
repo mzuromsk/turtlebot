@@ -2,10 +2,13 @@ import discord
 import asyncio
 from discord.ext import commands
 
+
+import turtle_credentials as tc
+#import turtle_credentials_phantom as tc
+
 import aiohttp
 
-#import turtle_credentials as tc
-import turtle_credentials_phantom as tc
+
 
 from cogs.exceptions import APIError, APIInactiveError, APIInvalidKey, APIKeyError
 

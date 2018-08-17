@@ -414,7 +414,7 @@ class GrandTurtleGameControls:
 
         return(leaderboard)
 
-    @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
+    @commands.command(hidden=True,brief='Updates the game leaderboard.')
     @commands.check(turtlecheck.if_seaguard)
     async def game_update_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
         #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
@@ -422,6 +422,7 @@ class GrandTurtleGameControls:
 
     async def update_leaderboard(self, ctx, turn=0):
 
+        #First try and see if we can find the current leaderboard
         try:
             leaderboard = await ctx.get_message(478679591414792192)
         except:
@@ -439,97 +440,123 @@ class GrandTurtleGameControls:
                 the_grand_game.append([str(s) for s in row.split()])
         ########################################################
 
-        place_on_leaderboard = 1
+        #Leaderboard display options for fancy version
         last_question_number = 15
         max_number_full_display = 5
         max_number_on_leaderboard = 25
-        number_per_line =15
+        number_icons_per_line =15
 
-        hero_point_empty_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpe')
-        print(hero_point_empty_emoji)
-        print(hero_point_empty_emoji.id)
-        hero_point_full_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpf')
-        print(hero_point_full_emoji)
-        print(hero_point_full_emoji.id)
+        with leaderboard.channel.typing():
 
-        #TODO: Edit this so it looks up the leaderboard name in the lookup table
-        embed = discord.Embed(title='The Leaderboard  |  Grand Siege Turtle Games: Season 1', colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1', description='**Icon Key**   <:hpf:479715031135682565> : Step Completed || <:hpe:479715031345528833> : Step Unfinished \n ')
-        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-        embed.set_footer(text='Last progression: #TODO VALUE', icon_url='https://cdn.discordapp.com/attachments/471547983859679232/478072773659328524/108145_time_512x512.png')
+            complete_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpf')
+            incomplete_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpe')
 
-        additional_placements_string =''
-        chunk_name_string = ''
+            if incomplete_emoji is not None and complete_emoji is not None:
+                leaderboard_description_string = description='**Icon Key**   '+ str(complete_emoji) + ': Step Completed   **||**   '+ str(incomplete_emoji) + ': Step Unfinished \n '
+                leaderboard_icons_succesfully_loaded = True
+            else:
+                leaderboard_description_string = description='Each number indicates a completed step in the game.'
+                leaderboard_icons_succesfully_loaded = False
 
-        for turtle in range(len(the_grand_game)):
-            #As long as the turtle has completed at least the first hint, add them to the leaderboard
-            if int(the_grand_game[turtle][3]) >= 1:
-                #If there is a nickname for the turtle, use that as turtle_name
-                if the_grand_game[turtle][2] != 'x':
-                    turtle_name = str(the_grand_game[turtle][2])
-                else:
-                    turtle_name = str(the_grand_game[turtle][1])
+            time = datetime.datetime.utcnow()
+            #TODO: Edit this so it looks up the leaderboard name in the lookup table
+            leaderboard_title_string = '__**The Leaderboard  |  Grand Siege Turtle Games: Season 1**__'
 
-                #If the turtle completed the last question add finished status to string
-                if int(the_grand_game[turtle][3]) == last_question_number:
-                    finished_status = '__**[Done!]**__'
-                    starting_char = '~~'
-                    ending_char = '~~'
-                else:
-                    finished_status = ''
-                    starting_char = ''
-                    ending_char = ''
+            #Create Embed
+            embed = discord.Embed(title=leaderboard_title_string, colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1', description = leaderboard_description_string, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
 
-                #If there is a tie add tie breaker time to string
-                if the_grand_game[turtle][4] == '1':
-                    tiebreak_time = '*(\@' + str(the_grand_game[turtle][5]) + ')*'
-                else:
-                    tiebreak_time = ''
+            #Initialize strings and counters that we need in the leaderboard generation loop
 
-                field_name_string = str(place_on_leaderboard) + ') **' + turtle_name + '** ' + finished_status + ' ' + tiebreak_time
-                #field_value_string = starting_char+'__**'
-                #Add progress bar for each completed step up until the last completed step
-##                for i in range(1,int(the_grand_game[turtle][3])+1):
-##                    field_value_string=field_value_string+'|#'+str(i)
-##                field_value_string= field_value_string+"|**__"+ending_char
+            field_value_string = ''
+            chunk_name_string = ''
+            place_on_leaderboard = 1
 
-                field_value_string = ''
-                countperline = 1
-                for i in range(1,int(the_grand_game[turtle][3])+1):
-                    field_value_string=field_value_string+'<:hpf:479715031135682565>'
-                    countperline +=1
-                    if countperline>number_per_line:
-                        field_value_string+='\n'
-                        countperline =1
-                for i in range(1,last_question_number-int(the_grand_game[turtle][3])+1):
-                    field_value_string=field_value_string+'<:hpe:479715031345528833>'
-                    countperline +=1
-                    if countperline>number_per_line:
-                        field_value_string+='\n'
-                        countperline =1
+            for turtle in range(len(the_grand_game)):
+                #As long as the turtle has completed at least the first hint, add them to the leaderboard
+                if int(the_grand_game[turtle][3]) >= 1:
+                    #If there is a nickname for the turtle, use that as turtle_name
+                    if the_grand_game[turtle][2] != 'x':
+                        turtle_name = str(the_grand_game[turtle][2])
+                    else:
+                        turtle_name = str(the_grand_game[turtle][1])
 
-                #Only full diplay as many to the leaderboard as we choose:
-                if place_on_leaderboard <= max_number_full_display:
-                    embed.add_field(name=field_name_string, value=field_value_string, inline=False)
-                elif place_on_leaderboard <= max_number_on_leaderboard:
-                    if place_on_leaderboard%max_number_full_display == 1:
-                        chunk_name_string = '__**' + str(place_on_leaderboard)+'th - ' + str(place_on_leaderboard+max_number_full_display-1)+'th**__'
+                    #If the turtle completed the last question add finished status to string
+                    if int(the_grand_game[turtle][3]) == last_question_number:
+                        finished_status = '__**[Done!]**__'
+                        starting_char = '~~'
+                        ending_char = '~~'
+                    else:
+                        finished_status = ''
+                        starting_char = ''
+                        ending_char = ''
 
-                    additional_placements_string = additional_placements_string + str(place_on_leaderboard) + ')  **|**  ' + str(the_grand_game[turtle][3]) + '/' + str(last_question_number) + '<:hpf:479715031135682565>' + '  **|  ' + turtle_name + '** ' + finished_status + ' ' + tiebreak_time + '\n'
+                    #If there is a tie add tie breaker time to string
+                    if the_grand_game[turtle][4] == '1':
+                        tiebreak_time = '*(\@' + str(the_grand_game[turtle][5]) + ')*'
+                    else:
+                        tiebreak_time = ''
 
-                    if place_on_leaderboard%max_number_full_display == 0:
-                        embed.add_field(name=chunk_name_string, value=additional_placements_string, inline=True)
-                        chunk_name_string = ''
-                        additional_placements_string=''
-                else:
-                    break
-                place_on_leaderboard = place_on_leaderboard + 1
-        if additional_placements_string != '':
-            embed.add_field(name=chunk_name_string, value=additional_placements_string , inline=True)
+                    field_name_string = str(place_on_leaderboard) + ') **' + turtle_name + '** ' + finished_status + ' ' + tiebreak_time
 
-        try:
-            await leaderboard.edit(embed=embed)
-        except:
-            await ctx.send(embed=embed)
+                    #If we were able to load the icons we need, do a fancier table
+                    if leaderboard_icons_succesfully_loaded:
+                        #Only full diplay as many to the leaderboard as we choose:
+                        if place_on_leaderboard <= max_number_full_display:
+                            countperline = 1
+                            for i in range(1,int(the_grand_game[turtle][3])+1):
+                                field_value_string=field_value_string+str(complete_emoji)
+                                countperline +=1
+                                if countperline>number_icons_per_line:
+                                    field_value_string+='\n'
+                                    countperline =1
+                            for i in range(1,last_question_number-int(the_grand_game[turtle][3])+1):
+                                field_value_string=field_value_string+str(incomplete_emoji)
+                                countperline +=1
+                                if countperline>number_icons_per_line:
+                                    field_value_string+='\n'
+                                    countperline =1
+                            embed.add_field(name=field_name_string, value=field_value_string, inline=False)
+                            field_value_string = ''
+
+                        #Then group the rest of leaderboard entries into sets of the same size to display
+                        elif place_on_leaderboard <= max_number_on_leaderboard:
+                            if place_on_leaderboard%max_number_full_display == 1:
+                                chunk_name_string = ':turtle:  __**' + str(place_on_leaderboard)
+
+                            field_value_string = field_value_string + str(place_on_leaderboard) + ')  **|**  ' + str(the_grand_game[turtle][3]) + '/' + str(last_question_number) + ' ' + str(complete_emoji) + '  **|  ' + turtle_name + '** ' + finished_status + ' ' + tiebreak_time + '\n'
+
+                            if place_on_leaderboard%max_number_full_display == 0:
+                                chunk_name_string += ' - ' + str(place_on_leaderboard)+'**__'
+                                embed.add_field(name=chunk_name_string, value=field_value_string, inline=True)
+                                chunk_name_string = ''
+                                field_value_string = ''
+
+                        #Stop when we are over the max number to be allowed on leaderboard
+                        else:
+                            break
+
+                        place_on_leaderboard = place_on_leaderboard + 1
+
+                    #If we weren't able to load the icons, make do with a simple table
+                    else:
+                        field_value_string = starting_char+'__**'
+                        #Add progress bar for each completed step up until the last completed step
+                        for i in range(1,int(the_grand_game[turtle][3])+1):
+                            field_value_string=field_value_string+'|#'+str(i)
+                        field_value_string= field_value_string+"|**__"+ending_char
+                        embed.add_field(name=field_name_string, value=field_value_string, inline=True)
+
+            #Fancy table cleanup
+            if leaderboard_icons_succesfully_loaded:
+                if field_value_string != '':
+                    chunk_name_string += ' - ' + str(place_on_leaderboard-1)+'**__'
+                    embed.add_field(name=chunk_name_string, value=field_value_string, inline=True)
+
+            try:
+                await leaderboard.edit(embed=embed)
+            except:
+                await ctx.send(embed=embed)
 
 class Choose_One_Card_Settings:
     def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5):

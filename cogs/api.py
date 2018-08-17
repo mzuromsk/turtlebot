@@ -66,9 +66,9 @@ class ApiControls:
                          "means not")
         return embed
 
-    @commands.command(hidden=True)
+    @commands.command(brief="Get a table of weeky raid boss kills. [Options]", description="Uses a stored API key to look up and return a table of weekly raid boss kills. Will default to sending the table in a private message. If you'd like to have the table shared with the current text channel, enter $raid_bosses True")
     @commands.check(turtlecheck.if_seaguard)
-    async def raid_bosses(self,ctx):
+    async def raid_bosses(self,ctx, share=False):
 
         raids = []
         #TODO: Update this part to just pull the raids list from a cache in the database rather than fetching it again everytime
@@ -76,6 +76,7 @@ class ApiControls:
         for raid in raids_index:
             raids.append(await self.call_api("raids/" + raid))
 
+        await ctx.trigger_typing()
         endpoint = "account/raids"
         try:
             api_key = get_api_key(ctx.author.id)
@@ -85,8 +86,10 @@ class ApiControls:
 
         embed = await self.boss_embed(ctx, raids, results)
         embed.set_author(name=ctx.author.name)
-        await ctx.send("{.mention}, here are your raid bosses:".format(ctx.author), embed=embed)
-
+        if share==True:
+            await ctx.send("{.mention}, here are your raid boss clears for the week:".format(ctx.author), embed=embed)
+        else:
+            await ctx.author.send("{0}, here are your raid boss clears for the week:".format(ctx.author.name), embed=embed)
 
     async def call_api(self, endpoint, key=None):
         headers = {

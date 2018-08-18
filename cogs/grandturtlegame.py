@@ -17,6 +17,7 @@ class GrandTurtleGameControls:
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
+
     async def game_send_test_cards(self, ctx, description=True):
         #Set overall hidden key paramaters
         gamename ='Divinity\'s Reach Pre-Season'
@@ -90,25 +91,30 @@ class GrandTurtleGameControls:
         cur.execute(sqlStr)
         conn.commit()
 
+
     async def create_start_card(self, ctx, gamename='', keyname='Hidden Key', steps=1, cooldown=0, timer=5):
         #Format all the strings
         description_string = "```$" + keyname + "```" + "\n**Congratulations!** You have `found` the hidden key `$" + keyname + "`, but now you have to prove your worth to earn it. This key involves:\n\n \n"
         gamename_string = "Grand Game: " + gamename
         if steps==1:
             steps_string = ':footprints: | ' + str(steps) + ' step'
+
             steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' question. If you give an incorrect answer at any step, you may be asked to restart the key.'
             stopwatch_description_string = 'The questions in this series have a default time limit of ' + str(timer) + ' minutes.\n[Unless otherwise indicated]\n\n'
         else:
             steps_string = ':footprints: | ' + str(steps) + ' steps'
             steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' seperate questions in a row. If you give an incorrect answer at any step, you may be asked to restart the key.\n'
+
             stopwatch_description_string = 'The questions in this series have a default time limit of ' + str(timer) + ' minutes.\n[Unless otherwise indicated]\n\n'
 
         if cooldown==0:
             cooldown_string = ':repeat: | No cooldown'
+
             cooldown_description_string = 'This hidden key has no cooldown. If you answer any step incorrectly, you can `immediately` reattempt the key by retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel'
         else:
             cooldown_string = ':repeat: | ' + str(cooldown) + ' minute cooldown'
             cooldown_description_string = 'This hidden key has a ' + str(cooldown) + ' minute cooldown (measured from when you entered the hidden key). If you fail, you will have to wait the required cooldown period before retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel.\n'
+
 
         stopwatch_string = ':stopwatch: | ' + str(timer) + ' minutes'
 
@@ -140,6 +146,7 @@ class GrandTurtleGameControls:
             description_string+="```Select your answer from the choices below. You make a selection by clicking the associated reaction.```"
         gamename_string = "Grand Game: " + card_settings.gamename
 
+
         time = datetime.datetime.utcnow()
 
         with ctx.author.dm_channel.typing():
@@ -147,25 +154,29 @@ class GrandTurtleGameControls:
             embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
             embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/189526271288410112/479417475025469483/SelectOne.png')
             embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+
             embed.add_field(name='The Clue', value=card_settings.clue_text, inline=False)
+
 
             count = 0
             key_text = ''
+
 
             for item in range(len(card_settings.emoji)):
                 key_text = key_text + str(card_settings.emoji[item]) + ' ' + card_settings.emoji_answer_key_text[item] + '  **|**  '
                 count += 1
                 if count >= card_settings.icon_key_per_line:
+
                     count = 0
                     key_text += '\n\n'
 
             embed.add_field(name='Icon Key', value=key_text, inline=False)
 
-
             #Send it to the user
             card = await ctx.author.send(embed=embed)
 
             #Add all the reactions
+
             for item in range(len(card_settings.emoji)):
                 await card.add_reaction(card_settings.emoji[item])
             return(card)
@@ -263,6 +274,7 @@ class GrandTurtleGameControls:
         #TODO: Query the db for leaderboard position
         leaderboard_description_string = 'Your leaderboard progress now reflects that you have earned this key. You are currently in `1st` place!'
 
+
         unlocked_next_clue_description_string = 'The clue will appear below. If you take a break and forget where you left off, you can always type: $game_my_last_clue into any ST text channel to have the clue for the next `hidden key` resent to you.'
 
         time = datetime.datetime.utcnow()
@@ -272,6 +284,7 @@ class GrandTurtleGameControls:
         embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479478074702954496/crossedkeys.png')
         embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
         embed.add_field(name=':sparkles: | Your position on the leaderboard has been updated!', value=leaderboard_description_string, inline=False)
+
         embed.add_field(name=':unlock: | You have unlocked the ability to use the next hidden key!', value=unlocked_next_clue_description_string, inline=False)
         embed.add_field(name=':mag_right: | Clue for your next `$hiddenkey`', value=card_settings.clue_text, inline=False)
 
@@ -321,7 +334,9 @@ class GrandTurtleGameControls:
                 step_1_settings.emoji = [':regional_indicator_d:',':regional_indicator_m:',':regional_indicator_k:',':regional_indicator_l:',':regional_indicator_g:',':regional_indicator_b:']
                 step_1_settings.emoji_key = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
                 step_1_settings.emoji_code = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
+
                 step_1_settings.correct_index = 2
+
                 step_1_settings.timer=5
 
                 question_card = await  self.create_choose_one_card(ctx, step_1_settings)
@@ -337,7 +352,9 @@ class GrandTurtleGameControls:
             await ctx.author.send(timeout_message)
             return
         else:
+
             if str(pick_one_answer.emoji) == step_1_settings.emoji_code[step_1_settings.correct_index]:
+
                 earned_key_settings = Earned_Key_Card_Settings(gamename, keyname, steps, cooldown, timer)
                 earned_key_settings.clue_text = "The next hint for a question would go here."
 
@@ -589,6 +606,7 @@ class GrandTurtleGameControls:
 
     async def update_leaderboard(self, ctx, turn=0):
 
+
         #First try and see if we can find the current leaderboard
         try:
             leaderboard = await ctx.get_message(get_active_leaderboard_message_id())
@@ -610,7 +628,9 @@ class GrandTurtleGameControls:
         #Leaderboard display options for fancy version
         last_question_number = 15
         max_number_full_display = 5
+
         max_number_on_leaderboard = 20
+
         number_icons_per_line =15
 
         with leaderboard.channel.typing():
@@ -726,6 +746,7 @@ class GrandTurtleGameControls:
                 await ctx.send(embed=embed)
 
 class Choose_One_Card_Settings:
+
     def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5, question_description = True):
         self.gamename = gamename
         self.keyname = keyname
@@ -748,11 +769,13 @@ class Choose_One_Card_Settings:
 
 class Combination_Card_Settings:
     def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5, question_description = True):
+
         self.gamename = gamename
         self.keyname = keyname
         self.steps = steps
         self.cooldown = cooldown
         self.timer = timer
+
         self.question_description = question_description
         self.timer_between_combo_clicks = 10   #In seconds
         self.step_number = 1
@@ -797,6 +820,7 @@ class Get_In_Game_Card_Settings:
         self.attempts_before_text_input = 2
         self.image = ''
         self.attachments = []
+
         self.url = ''
 
 class Earned_Key_Card_Settings:
@@ -807,9 +831,11 @@ class Earned_Key_Card_Settings:
         self.cooldown = cooldown
         self.timer = timer
         self.step_number = 1
+
         self.clue_text = 'Replace with the next hint'
         self.image = ''
         self.attachments = []
+
         self.url = ''
 
 def setup(bot):

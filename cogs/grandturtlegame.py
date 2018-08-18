@@ -592,7 +592,7 @@ class GrandTurtleGameControls:
             conn = tc.get_conn()
         cur = conn.cursor()
         sqlStr = "INSERT INTO turtle.game_messages (game_id, message_id, message_name) VALUES (" + str(game_id) + ", " + str(leaderboard_message_id) + ", '" + name + "');"
-        print(sqlStr)
+        #print(sqlStr)
         cur.execute(sqlStr)
         conn.commit()
 
@@ -745,6 +745,35 @@ class GrandTurtleGameControls:
             except:
                 await ctx.send(embed=embed)
 
+
+
+
+
+
+
+    @commands.command(hidden=True,brief='DEBUG ONLY - MOVES AUTHOR FORWARD ONE SUBSTEP')
+    @commands.check(turtlecheck.if_seaguard)
+    async def debug_complete_substep(self, ctx):
+        player = ctx.author.name
+        discord_id = ctx.author.id
+        cur_step = get_active_step(discord_id)
+        cur_substep = get_active_substep(discord_id)
+        await ctx.send(player + " is currently on step " + str(cur_step) + ", substep " + str(cur_substep) + ".  Completing a step now.")
+            
+        complete_substep(discord_id, cur_step, cur_substep)
+
+        cur_step = get_active_step(discord_id)
+        cur_substep = get_active_substep(discord_id)
+        await ctx.send(player + " is currently on step " + str(cur_step) + ", substep " + str(cur_substep) + ".")
+
+
+
+
+
+
+
+
+
 class Choose_One_Card_Settings:
 
     def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5, question_description = True):
@@ -869,3 +898,104 @@ def get_active_leaderboard_message_id():
         return result[0][0]
     except:
         return -1
+
+def complete_substep(discord_id, step_id, substep_id):
+    game_id = get_active_game()
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+    ##TODO:  CHECK THAT THE INPUT IS VALID(STEP EXISTS, NOT ALREADY COMPLETED)
+
+        
+    ###FIRST, COMPLETE THE PLAYER'S SPECIFIED SUBSTEP
+    sqlStr = "INSERT INTO turtle.game_substep_completions (discord_id, game_id, step_id, substep_id, time_completed) VALUES (" + str(discord_id) + ", " + str(game_id) + ", " + str(step_id) + ", " + str(substep_id) + ", NOW());"
+    print(sqlStr)
+    cur.execute(sqlStr)
+    conn.commit()
+
+    ##NEXT, CHECK IF THIS COMPLETES A STEP
+
+    #gather max substep completed
+    sqlStr = "SELECT max(substep_id) from turtle.game_substep_completions WHERE game_id = " + str(game_id) + " AND discord_id = " + str(discord_id) + " AND step_id = " + str(step_id) + ";"
+    print(sqlStr)
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    #TODO: make this fail gracefully, but for now I think I just want the error to print to console
+    max_substep = result[0][0]
+
+    #gather the max substep for this step
+    sqlStr = "SELECT substeps FROM turtle.game_steps WHERE game_id = " + str(game_id) + " AND step_id = " + str(step_id) + ";"
+    print(sqlStr)
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    #TODO:  fail gracefully
+    num_substeps = result[0][0]
+
+
+    if num_substeps == max_substep:
+        #Step completed!  Update the step table
+        sqlStr = "INSERT INTO turtle.game_step_completions (discord_id, game_id, step_id, time_completed) VALUES (" + str(discord_id) + ", " + str(game_id) + ", "+ str(step_id) + ", NOW());"
+        print(sqlStr)
+        cur.execute(sqlStr)
+        conn.commit()
+    #else player has more substeps, so don't write a step_completion
+
+    return True
+
+def get_active_step(discord_id):
+    game_id = get_active_game()
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+
+    sqlStr = "SELECT max(step_id) FROM turtle.game_step_completions WHERE discord_id = " + str(discord_id) + " AND game_id = " + str(game_id) + ";"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        if result[0][0] is None:
+            return 1  #If no compelted steps, active step is 1
+        max_completed_step =  result[0][0]
+        return max_completed_step + 1 # active step is 1 more than max_completed_step
+    except:
+        return 1
+
+
+
+def get_active_substep(discord_id):
+    game_id = get_active_game()
+    active_step = get_active_step(discord_id)
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+
+    sqlStr = "SELECT max(substep_id) FROM turtle.game_substep_completions WHERE discord_id = " + str(discord_id) + " AND game_id = " + str(game_id) + " AND step_id = " + str(active_step) + ";"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        if result[0][0] is None:
+            return 1  #If no compelted substeps, active substep is 1
+        max_completed_substep =  result[0][0]
+        return max_completed_substep + 1 # active substep is 1 more than max_completed_substep
+    except:
+        return None
+
+        
+
+        
+        
+        
+
+        
+        
+
+
+

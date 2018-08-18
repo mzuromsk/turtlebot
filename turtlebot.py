@@ -3,8 +3,8 @@ import asyncio
 from discord.ext import commands
 
 
-import turtle_credentials as tc
-#import turtle_credentials_phantom as tc
+#import turtle_credentials as tc
+import turtle_credentials_phantom as tc
 
 import aiohttp
 

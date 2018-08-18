@@ -6,8 +6,6 @@ from discord.ext import commands
 import psycopg2
 import turtle_credentials as tc
 
-
-
 class GrandTurtleGameControls:
     def __init__(self, bot):
         self.bot = bot
@@ -19,8 +17,80 @@ class GrandTurtleGameControls:
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
-    async def game_send_test_card(self, ctx):
-        start_card = await self.create_start_card(ctx)
+
+    async def game_send_test_cards(self, ctx, description=True):
+        #Set overall hidden key paramaters
+        gamename ='Divinity\'s Reach Pre-Season'
+        keyname='Uzolan'
+        steps=4
+        cooldown=5
+        timer=5
+
+        start_card = await self.create_start_card(ctx, gamename, keyname, steps, cooldown, timer)
+
+        step_1_settings = Choose_One_Card_Settings(gamename, keyname, steps, cooldown, timer, description)
+        step_1_settings.step_number=1
+        step_1_settings.clue_text='Take a load off and wander through the gardens of the Central Plaza. Some might say the Gods themselves tend to the garden, but which of the gods “fought the hardest and rightfully earned their spot among the six” (More of a Joke about GW: Nightfall)'
+        step_1_settings.emoji_answer_key_text = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
+        step_1_settings.emoji = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
+        step_1_settings.correct_item_in_list = 3
+        step_1_settings.timer=5
+
+        question_card = await self.create_choose_one_card(ctx, step_1_settings)
+
+        step_2_settings = Combination_Card_Settings(gamename, keyname, steps, cooldown, timer, description)
+        step_2_settings.step_number=2
+        step_2_settings.clue_text='In order of descending cleave.'
+        step_2_settings.icon_key_per_line = 2
+
+        emoji_guard = discord.utils.get(ctx.author.guild.emojis, name='Guardian_icon')
+        emoji_thief = discord.utils.get(ctx.author.guild.emojis, name='Thief_icon')
+
+        step_2_settings.emoji_answer_key_text = ['Guardian','Thief','Fire Elementalist','Water Elementalist']
+        step_2_settings.emoji = [emoji_guard,emoji_thief,'\U0001F525','\U0001F4A7']
+        step_2_settings.correct_combination= [3,1,2,4]
+        step_2_settings.timer=1
+
+        question_card2 = await self.create_combination_card(ctx, step_2_settings)
+
+        step_3_settings = Text_Card_Settings(gamename, keyname, steps, cooldown, timer, description)
+        step_3_settings.step_number=3
+        step_3_settings.clue_text='Exploring near Uzolan’s Mechanical Orchestra you\'ll find yourself wondering \"how do you walk on these stones all day long?\"'
+
+        question_card3 = await self.create_text_card(ctx, step_3_settings)
+
+        step_4_settings = Get_In_Game_Card_Settings(gamename, keyname, steps, cooldown, timer, description)
+        step_4_settings.step_number=4
+        step_4_settings.clue_text='You were gonna try for the jailbreak, but the key you found is complete garbage.'
+
+        question_card4 = await self.create_get_in_game_card(ctx, step_4_settings)
+
+        end_settings = Earned_Key_Card_Settings(gamename, keyname, steps, cooldown, timer)
+        end_settings.clue_text = 'Not feeling very creative. Go find the next hidden key.'
+        end_card = await self.create_earned_key_card(ctx, end_settings)
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def print_active_leaderboard_message_id(self, ctx):
+        #await ctx.author.send("active leaderboard id message id:")
+        print(get_active_leaderboard_message_id())
+        await ctx.author.send(get_active_leaderboard_message_id())
+
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_seaguard)
+    async def delete_active_game_leaderboard_message_from_database(self, ctx):
+        game_id = get_active_game()
+        try:
+            conn
+        except NameError:
+            conn = tc.get_conn()
+        cur = conn.cursor()
+        sqlStr = "DELETE FROM turtle.game_messages WHERE game_id = " + str(game_id) + ";"
+        print(sqlStr)
+        cur.execute(sqlStr)
+        conn.commit()
+
 
     async def create_start_card(self, ctx, gamename='', keyname='Hidden Key', steps=1, cooldown=0, timer=5):
         #Format all the strings
@@ -28,19 +98,23 @@ class GrandTurtleGameControls:
         gamename_string = "Grand Game: " + gamename
         if steps==1:
             steps_string = ':footprints: | ' + str(steps) + ' step'
-            steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' question.\nIf you give an incorrect answer, you may be asked to restart by retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel.'
+
+            steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' question. If you give an incorrect answer at any step, you may be asked to restart the key.'
             stopwatch_description_string = 'The questions in this series have a default time limit of ' + str(timer) + ' minutes.\n[Unless otherwise indicated]\n\n'
         else:
             steps_string = ':footprints: | ' + str(steps) + ' steps'
-            steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' seperate questions in a row.\n\nIf you give an incorrect answer at any step, you may be asked to restart the entire series of questions by retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel.\n'
+            steps_description_string = 'To earn this hidden key, you will have to correctly answer ' + str(steps) + ' seperate questions in a row. If you give an incorrect answer at any step, you may be asked to restart the key.\n'
+
             stopwatch_description_string = 'The questions in this series have a default time limit of ' + str(timer) + ' minutes.\n[Unless otherwise indicated]\n\n'
 
         if cooldown==0:
             cooldown_string = ':repeat: | No cooldown'
-            cooldown_description_string = 'This hidden key has no cooldown. If you answer any step incorrectly, you can `immediately` reattempt the key by retyping the hidden key in any ST text channel.'
+
+            cooldown_description_string = 'This hidden key has no cooldown. If you answer any step incorrectly, you can `immediately` reattempt the key by retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel'
         else:
             cooldown_string = ':repeat: | ' + str(cooldown) + ' minute cooldown'
-            cooldown_description_string = 'This hidden key has a ' + str(cooldown) + ' minute cooldown (measured from when you entered the hidden key). If you answer any step incorrectly, you will have to wait the required cooldown period. After the cooldown, you may try again by retyping the hidden key in any ST text channel.\n'
+            cooldown_description_string = 'This hidden key has a ' + str(cooldown) + ' minute cooldown (measured from when you entered the hidden key). If you fail, you will have to wait the required cooldown period before retyping the hidden key ' + '`$' +keyname+ '` in any ST text channel.\n'
+
 
         stopwatch_string = ':stopwatch: | ' + str(timer) + ' minutes'
 
@@ -64,11 +138,14 @@ class GrandTurtleGameControls:
         await start_card.add_reaction('❌')
         return(start_card)
 
-    async def create_choose_one_card(self, ctx, choose_one_card):
+    async def create_choose_one_card(self, ctx, card_settings):
         #TODO: Edit so that it just accepts a choose_one_card class instance
 
-        description_string = "`$" + choose_one_card.keyname + "`" + " | Step " + str(choose_one_card.step_number) + " of " + str(choose_one_card.steps) + " | :stopwatch: " + str(choose_one_card.timer) + ' minutes\n' + "\n```Select your answer from the choices below. You make a selection by clicking the associated reaction.```"
-        gamename_string = "Grand Game: " + choose_one_card.gamename
+        description_string = "`$" + card_settings.keyname + "`" + " | Step " + str(card_settings.step_number) + " of " + str(card_settings.steps) + " | :stopwatch: " + str(card_settings.timer) + ' minutes\n'
+        if card_settings.question_description:
+            description_string+="```Select your answer from the choices below. You make a selection by clicking the associated reaction.```"
+        gamename_string = "Grand Game: " + card_settings.gamename
+
 
         time = datetime.datetime.utcnow()
 
@@ -77,15 +154,19 @@ class GrandTurtleGameControls:
             embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
             embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/189526271288410112/479417475025469483/SelectOne.png')
             embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-            embed.add_field(name='The Clue', value=choose_one_card.clue_text, inline=False)
+
+            embed.add_field(name='The Clue', value=card_settings.clue_text, inline=False)
+
 
             count = 0
             key_text = ''
 
-            for item in range(len(choose_one_card.emoji_key)):
-                key_text = key_text + choose_one_card.emoji[item] + ' ' + choose_one_card.emoji_key[item] + '  |  '
+
+            for item in range(len(card_settings.emoji)):
+                key_text = key_text + str(card_settings.emoji[item]) + ' ' + card_settings.emoji_answer_key_text[item] + '  **|**  '
                 count += 1
-                if count > 2:
+                if count >= card_settings.icon_key_per_line:
+
                     count = 0
                     key_text += '\n\n'
 
@@ -95,17 +176,104 @@ class GrandTurtleGameControls:
             card = await ctx.author.send(embed=embed)
 
             #Add all the reactions
-            for item in range(len(choose_one_card.emoji)):
-                await card.add_reaction(choose_one_card.emoji_code[item])
+
+            for item in range(len(card_settings.emoji)):
+                await card.add_reaction(card_settings.emoji[item])
             return(card)
 
-    async def create_earned_key_card(self, ctx, earned_key_card):
+    async def create_text_card(self, ctx, card_settings):
+        #TODO: Edit so that it just accepts a choose_one_card class instance
+
+        description_string = "`$" + card_settings.keyname + "`" + " | Step " + str(card_settings.step_number) + " of " + str(card_settings.steps) + " | :stopwatch: " + str(card_settings.timer) + ' minutes\n'
+        if card_settings.question_description:
+            description_string+="```Type in your answer: it may be a single word or a longer phrase.\n\nNote: Spelling counts, but not punctuation.```"
+
+        gamename_string = "Grand Game: " + card_settings.gamename
+
+        time = datetime.datetime.utcnow()
+
+        with ctx.author.dm_channel.typing():
+            #Create the start card embed message
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/189526271288410112/479417402107363328/textinput.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name='The Clue', value=card_settings.clue_text, inline=False)
+
+            #Send it to the user
+            card = await ctx.author.send(embed=embed)
+
+    async def create_get_in_game_card(self, ctx, card_settings):
+        #TODO: Add API key lookup
+        description_string = "`$" + card_settings.keyname + "`" + " | Step " + str(card_settings.step_number) + " of " + str(card_settings.steps) + " | :stopwatch: " + str(card_settings.timer) + ' minutes\n'
+        if card_settings.question_description:
+            description_string+="```Figure out the clue and find the corresponding item in game. When you have the item in your inventory, click the checkmark to begin the scan. \n\nNote: Requires a full API key. Scan completes in 5 minutes.```"
+
+        gamename_string = "Grand Game: " + card_settings.gamename
+
+        time = datetime.datetime.utcnow()
+
+        with ctx.author.dm_channel.typing():
+            #Create the start card embed message
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/189526271288410112/479417574619086859/Inventory.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name='The Clue', value=card_settings.clue_text, inline=False)
+
+            ready_string = 'Ready to get started, {0}?\n'.format(ctx.author.name)
+            ready_description_string = 'When you have the mystery item in your inventory, click ✅.'
+
+            #Send it to the user
+            card = await ctx.author.send(embed=embed)
+
+            #Add all the reactions
+            await card.add_reaction('✅')
+            await card.add_reaction('❌')
+            return(card)
+
+    async def create_combination_card(self, ctx, card_settings):
+        description_string = "`$" + card_settings.keyname + "`" + " | Step " + str(card_settings.step_number) + " of " + str(card_settings.steps) + " | :stopwatch: " + str(card_settings.timer) + ' minutes\n'
+        if card_settings.question_description:
+            description_string+="\n```Solve this combination lock by selecting the reactions below in the correct order. To select a reaction, click it so that it increments from 1 to 2. \nNote: you can not reset a mistake - you must retry the hidden key.```"
+
+        gamename_string = "Grand Game: " + card_settings.gamename
+
+        time = datetime.datetime.utcnow()
+
+        with ctx.author.dm_channel.typing():
+            #Create the start card embed message
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/189526271288410112/479417522861637643/combinationlock.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name='The Clue', value=card_settings.clue_text, inline=False)
+
+            count = 0
+            key_text = ''
+
+            for item in range(len(card_settings.emoji)):
+                key_text = key_text + str(card_settings.emoji[item]) + ' ' + card_settings.emoji_answer_key_text[item] + '  |  '
+                count += 1
+                if count >= 2:
+                    count = 0
+                    key_text += '\n\n'
+
+            embed.add_field(name='Icon Key', value=key_text, inline=False)
+
+            #Send it to the user
+            card = await ctx.author.send(embed=embed)
+
+            #Add all the reactions
+            for item in range(len(card_settings.emoji)):
+                await card.add_reaction(card_settings.emoji[item])
+            return(card)
+
+    async def create_earned_key_card(self, ctx, card_settings):
         #Format all the strings
-        description_string = "```$" + earned_key_card.keyname + "```" + "\n**Congratulations!** You have now fully `earned` the hidden key `$" + earned_key_card.keyname + "`!\n\n \n"
-        gamename_string = "Grand Game: " + earned_key_card.gamename
+        description_string = "```$" + card_settings.keyname + "```" + "\n**Congratulations!** You have now fully `earned` the hidden key `$" + card_settings.keyname + "`!\n\n \n"
+        gamename_string = "Grand Game: " + card_settings.gamename
 
         #TODO: Query the db for leaderboard position
-        leaderboard_description_string = 'Your leaderboard progres now reflects that you have earned this key. You are currently in `1st` place!'
+        leaderboard_description_string = 'Your leaderboard progress now reflects that you have earned this key. You are currently in `1st` place!'
+
 
         unlocked_next_clue_description_string = 'The clue will appear below. If you take a break and forget where you left off, you can always type: $game_my_last_clue into any ST text channel to have the clue for the next `hidden key` resent to you.'
 
@@ -116,13 +284,13 @@ class GrandTurtleGameControls:
         embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479478074702954496/crossedkeys.png')
         embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
         embed.add_field(name=':sparkles: | Your position on the leaderboard has been updated!', value=leaderboard_description_string, inline=False)
-        embed.add_field(name=':unlock: | You have unlocked a clue for the next hidden key!', value=unlocked_next_clue_description_string, inline=False)
-        embed.add_field(name='```The Clue for your next $hiddenkey```', value=earned_key_card.clue_text, inline=False)
+
+        embed.add_field(name=':unlock: | You have unlocked the ability to use the next hidden key!', value=unlocked_next_clue_description_string, inline=False)
+        embed.add_field(name=':mag_right: | Clue for your next `$hiddenkey`', value=card_settings.clue_text, inline=False)
 
         #Send it to the user
-        earned_key_card = await ctx.author.send(embed=embed)
-
-        return(earned_key_card)
+        card = await ctx.author.send(embed=embed)
+        return(card)
 
 
     @commands.command(hidden=True)
@@ -166,7 +334,9 @@ class GrandTurtleGameControls:
                 step_1_settings.emoji = [':regional_indicator_d:',':regional_indicator_m:',':regional_indicator_k:',':regional_indicator_l:',':regional_indicator_g:',':regional_indicator_b:']
                 step_1_settings.emoji_key = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
                 step_1_settings.emoji_code = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
-                step_1_settings.emoji_correct_index = 2
+
+                step_1_settings.correct_index = 2
+
                 step_1_settings.timer=5
 
                 question_card = await  self.create_choose_one_card(ctx, step_1_settings)
@@ -182,7 +352,9 @@ class GrandTurtleGameControls:
             await ctx.author.send(timeout_message)
             return
         else:
-            if str(pick_one_answer.emoji) == step_1_settings.emoji_code[step_1_settings.emoji_correct_index]:
+
+            if str(pick_one_answer.emoji) == step_1_settings.emoji_code[step_1_settings.correct_index]:
+
                 earned_key_settings = Earned_Key_Card_Settings(gamename, keyname, steps, cooldown, timer)
                 earned_key_settings.clue_text = "The next hint for a question would go here."
 
@@ -261,29 +433,6 @@ class GrandTurtleGameControls:
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
-    async def print_active_leaderboard_message_id(self, ctx):
-        #await ctx.author.send("active leaderboard id message id:")
-        print(get_active_leaderboard_message_id())
-        await ctx.author.send(get_active_leaderboard_message_id())
-
-
-    @commands.command(hidden=True)
-    @commands.check(turtlecheck.if_seaguard)
-    async def delete_active_game_leaderboard_message_from_database(self, ctx):
-        game_id = get_active_game()
-        try:
-            conn
-        except NameError:
-            conn = tc.get_conn()
-        cur = conn.cursor()
-        sqlStr = "DELETE FROM turtle.game_messages WHERE game_id = " + str(game_id) + ";"
-        print(sqlStr)
-        cur.execute(sqlStr)
-        conn.commit()
-        
-
-    @commands.command(hidden=True)
-    @commands.check(turtlecheck.if_seaguard)
     async def game_example_send_picture_clue(self, ctx):
         #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
         try:
@@ -348,7 +497,9 @@ class GrandTurtleGameControls:
             await message.add_reaction('\U0001F525')
             await message.add_reaction('\U0001F4A7')
 
-            correct_answer_order=['\U0001F525',emoji_guard.name,emoji_thief.name,'\U0001F4A7']
+            correct_answer_order=[str('\U0001F525'),str(emoji_guard),str(emoji_thief),str('\U0001F4A7')]
+            print(str(emoji_guard),str('\U0001F525'),str('\U0001F4A7'),str(emoji_thief))
+
             tumbler_count = 0
             current_correct_answer = correct_answer_order[0]
             time_until_message_disappears = 300
@@ -361,18 +512,19 @@ class GrandTurtleGameControls:
 
         while tumbler_count < len(correct_answer_order):
             try:
-                ans, user = await self.bot.wait_for('reaction_add', check=r_check, timeout=time_until_message_disappears)
+                answer, user = await self.bot.wait_for('reaction_add', check=r_check, timeout=time_until_message_disappears)
             except asyncio.TimeoutError:
                 await ctx.author.send('Sorry. You took too long to select your choice. If you would like to retry, re-enter the command in a text channel and the bot will re-message you.')
                 break
             else:
                 time_until_message_disappears = 20
-                try:
-                    answer = str(ans.emoji.name)
-                except:
-                    answer = str(ans.emoji)
+                print('The answer string was: {0} The current_correct_answer string was: {1} The current answer: {2}'.format(answer,current_correct_answer, str(answer)))
+##                try:
+##                    answer = str(ans.emoji.name)
+##                except:
+##                    answer = str(ans.emoji)
 
-                if answer == current_correct_answer:
+                if str(answer) == current_correct_answer:
                     tumbler_count = tumbler_count + 1
 
                     if tumbler_count == len(correct_answer_order):
@@ -409,7 +561,7 @@ class GrandTurtleGameControls:
         embed.add_field(name='9) **Turtle**', value='__**|#1|#2|**__', inline=False)
         await ctx.send(embed=embed)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
     @commands.check(turtlecheck.if_seaguard)
     async def game_initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
         #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
@@ -418,6 +570,10 @@ class GrandTurtleGameControls:
         except:
             pass
 
+        leaderboard = await self.initialize_leaderboard(ctx, name)
+
+    #This is a version of the command that can be called by other commands as needed if an active leaderboard can't be found
+    async def initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
 
         title_string = '__** Leaderboard  |  ' + name + '**__'
 
@@ -439,30 +595,6 @@ class GrandTurtleGameControls:
         print(sqlStr)
         cur.execute(sqlStr)
         conn.commit()
-     
-        
-
-        leaderboard = await self.initialize_leaderboard(ctx, name)
-
-
-    #This is a version of the command that can be called by other commands as needed if an active leaderboard can't be found
-    async def initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
-
-        title_string = '__** Leaderboard  |  ' + name + '**__'
-
-        embed = discord.Embed(title=title_string, colour=0x76AFA5, url='https://www.youtube.com/watch?v=9jK-NcRmVcw&mute=1')
-        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-        embed.set_footer(text='No turtles have made it onto the leaderboard. Yet.', icon_url='https://cdn.discordapp.com/attachments/471547983859679232/478072773659328524/108145_time_512x512.png')
-
-        leaderboard = await ctx.send(embed=embed)
-        leaderboard_message_id = leaderboard.id
-        leaderboard_name = name
-
-        #TODO: Add the leaderboard_message_id and leaderboard_name to a db lookup table
-        #
-        #
-        #
-        #
 
         return(leaderboard)
 
@@ -474,9 +606,10 @@ class GrandTurtleGameControls:
 
     async def update_leaderboard(self, ctx, turn=0):
 
+
         #First try and see if we can find the current leaderboard
         try:
-            leaderboard = await ctx.get_message(478679591414792192)
+            leaderboard = await ctx.get_message(get_active_leaderboard_message_id())
         except:
             #initialize a new leaderboard
             await ctx.send('Could not find a currently running leaderboard. Initialized a new leaderboard here.')
@@ -495,7 +628,9 @@ class GrandTurtleGameControls:
         #Leaderboard display options for fancy version
         last_question_number = 15
         max_number_full_display = 5
-        max_number_on_leaderboard = 25
+
+        max_number_on_leaderboard = 20
+
         number_icons_per_line =15
 
         with leaderboard.channel.typing():
@@ -611,19 +746,81 @@ class GrandTurtleGameControls:
                 await ctx.send(embed=embed)
 
 class Choose_One_Card_Settings:
-    def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5):
+
+    def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5, question_description = True):
         self.gamename = gamename
         self.keyname = keyname
         self.steps = steps
         self.cooldown = cooldown
         self.timer = timer
+        self.question_description = question_description
         self.step_number = 1
         self.clue_text = ''
+        self.icon_key_per_line = 3
         self.emoji = []
-        self.emoji_key = []
-        self.emoji_correct_index = 0
+        #The emoji item MUST be either in the form of unicode i.e. '\U00002B05' or if it is a custom guild emoji, fetched from the discord utility : discord.utils.get(ctx.author.guild.emojis, name='<name as it appears in guild emoji list>')
+        self.emoji_answer_key_text = []
+        #Note that this is indexed starting at one to be consistent with ease-of-use for combinations.
+        self.correct_item_in_list = 1
         self.timer = 5
-        self.img = ''
+        self.image = ''
+        self.attachments = []
+        self.url = ''
+
+class Combination_Card_Settings:
+    def __init__(self, gamename='Current Game Name', keyname='Current Key Name', steps=1, cooldown=5, timer=5, question_description = True):
+
+        self.gamename = gamename
+        self.keyname = keyname
+        self.steps = steps
+        self.cooldown = cooldown
+        self.timer = timer
+
+        self.question_description = question_description
+        self.timer_between_combo_clicks = 10   #In seconds
+        self.step_number = 1
+        self.clue_text = ''
+        self.icon_key_per_line = 3
+        #The emoji item MUST be either in the form of unicode i.e. '\U00002B05' or if it is a custom guild emoji, fetched from the discord utility : discord.utils.get(ctx.author.guild.emojis, name='<name as it appears in guild emoji list>')
+        self.emoji = []
+        self.emoji_answer_key_text = []
+        #Note that this is indexed starting at one for ease of matching up with question text.
+        self.correct_combination = []
+        self.timer = 5
+        self.image = ''
+        self.attachments = []
+        self.url = ''
+
+class Text_Card_Settings:
+    def __init__(self, gamename='Current Game', keyname='Current Key', steps=1, cooldown=5, timer=5, question_description = True):
+        self.gamename = gamename
+        self.keyname = keyname
+        self.steps = steps
+        self.cooldown = cooldown
+        self.timer = timer
+        self.question_description = question_description
+        self.step_number = 1
+        self.clue_text = ''
+        self.timer = 5
+        self.image = ''
+        self.attachments = []
+        self.url = ''
+
+class Get_In_Game_Card_Settings:
+    def __init__(self, gamename='Current Game', keyname='Current Key', steps=1, cooldown=5, timer=5, question_description = True):
+        self.gamename = gamename
+        self.keyname = keyname
+        self.steps = steps
+        self.cooldown = cooldown
+        self.timer = timer
+        self.question_description = question_description
+        self.step_number = 1
+        self.clue_text = ''
+        self.timer = 5
+        self.attempts_before_text_input = 2
+        self.image = ''
+        self.attachments = []
+
         self.url = ''
 
 class Earned_Key_Card_Settings:
@@ -634,14 +831,16 @@ class Earned_Key_Card_Settings:
         self.cooldown = cooldown
         self.timer = timer
         self.step_number = 1
-        self.clue_text = ''
-        self.img = ''
+
+        self.clue_text = 'Replace with the next hint'
+        self.image = ''
+        self.attachments = []
+
         self.url = ''
 
 def setup(bot):
     bot.add_cog(GrandTurtleGameControls(bot))
 
-    
 def get_active_game():
     try:
         conn
@@ -670,6 +869,3 @@ def get_active_leaderboard_message_id():
         return result[0][0]
     except:
         return -1
-        
-        
-        

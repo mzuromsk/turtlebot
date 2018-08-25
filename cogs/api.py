@@ -258,7 +258,7 @@ class ApiControls:
                     else:
                         await ctx.author.send('```The API key was not saved. Turtle-bot tested the API key and found that it did not have the required permissions. Make sure you allow at least [Account][Characters][Inventories][Progression] permissions when creating your API key.```')
             else:
-                await ctx.author.send('```That API key looks like it is the wrong length, or something.  Questions? Ask Rev or Renay to take a look.```')
+                await ctx.author.send('```The API key was not saved: the API key looks like it is the wrong length, or something.  Questions? Ask Rev or Renay to take a look.```')
 
         await message.delete()
 

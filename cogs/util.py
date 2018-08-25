@@ -23,7 +23,7 @@ class UtilityControls:
         for guild in self.bot.guilds:
             if guild.name == 'Siege Turtles':
                    print('starting ST')
-                   for member in guild.members:                       
+                   for member in guild.members:
                         roles = member.roles
                         is_seaguard = False
                         for role in roles:
@@ -58,8 +58,8 @@ class UtilityControls:
                                 add_all_roles(turtle[0], turtle[4], conn, cur)
                                 print('completed ' + str(turtle[1]))
                                 await ctx.send('Finished creating record and roles for: ' + turtle[1])
-                                
-                                
+
+
 
     @commands.command(description="This shuts down the bot process. Contact a bot administrator [Rev, Renay] if you need the bot shutdown.", brief="Shut down turtlebot. Requires bot administrator privileges.")
     @commands.check(turtlecheck.if_admin)
@@ -67,8 +67,6 @@ class UtilityControls:
         await ctx.message.delete()
         await self.bot.logout()
         await self.bot.close()
-
-
 
 def setup(bot):
     bot.add_cog(UtilityControls(bot))
@@ -81,13 +79,13 @@ def check_if_turtle_exists(turtle_id):
     cur = conn.cursor()
     cur.execute("SELECT * FROM turtle.turtles WHERE discord_id = " + str(turtle_id) + ";")
     result = cur.fetchall()
-    
+
     try:
         print(result[0][0])
         return True
     except IndexError:
         return False
-    
+
 
 
 def add_all_roles(turtle_id, roles, conn, cur):
@@ -100,4 +98,4 @@ def add_all_roles(turtle_id, roles, conn, cur):
         sqlStr = "INSERT INTO turtle.turtle_roles(role_id, turtle_id) VALUES (" + str(role.id) + ", " + str(turtle_id) + ");"
         cur.execute(sqlStr)
         conn.commit()
-        
+

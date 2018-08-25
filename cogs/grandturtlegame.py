@@ -21,6 +21,16 @@ class GrandTurtleGameControls:
         await ctx.send('Pong!')
 
     @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_admin)
+    async def game_turn_bot_status_on(self, ctx):
+        await self.bot.change_presence(activity=discord.Game(name="Grand \U0001F422 Game"))
+
+    @commands.command(hidden=True)
+    @commands.check(turtlecheck.if_admin)
+    async def game_turn_bot_status_off(self, ctx):
+        await self.bot.change_presence(activity=None)
+
+    @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     async def game_test_hiddenkey(self, ctx, description=True):

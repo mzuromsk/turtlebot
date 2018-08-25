@@ -4,7 +4,7 @@ import turtlecheck
 from discord.ext import commands
 import psycopg2
 import turtle_credentials as tc
-
+from collections import OrderedDict
 from .exceptions import (APIError, APIBadRequest, APIConnectionError, APIForbidden, APIInactiveError, APIInvalidKey, APINotFound)
 
 class ApiControls:
@@ -87,6 +87,12 @@ class ApiControls:
         embed.set_author(name=ctx.author.name)
         await ctx.send("{.mention}, here are your raid bosses:".format(ctx.author), embed=embed)
 
+    async def call_multiple(self, endpoints, key=None):
+        res = []
+        for e in endpoints:
+            res.append(await self.call_api(e, key=key))
+        return res
+        print(res)
 
     async def call_api(self, endpoint, key=None):
         headers = {
@@ -124,6 +130,78 @@ class ApiControls:
                     raise APIConnectionError("{} {}".format(r.status, err_msg))
             return await r.json()
 
+    async def simple_search(self, ctx, item_id):
+        try:
+            item_endpoint = "items/"+str(item_id)
+            item_result = await self.call_api(item_endpoint)
+        except:
+            print("Error getting item")
+        try:
+            endpoints = [
+                "account/bank", "account/inventory", "account/materials",
+                "characters?page=0&page_size=200"
+            ]
+            results = await self.call_multiple(endpoints, key=get_api_key(ctx.message.author.id))
+            storage_spaces = ("bank", "shared", "material storage")
+            storage_spaces = OrderedDict(list(zip(storage_spaces, results)))
+            characters = results[3]
+        except:
+            print("Error getting endpoints")
+            return
+
+        def get_amount_in_slot(item):
+
+            if not item:
+                return 0
+            if item["id"]==item_id:
+                if "count" not in item:
+                    return 1
+                return item["count"]
+            return 0
+
+        storage_counts = OrderedDict()
+        for k, v in storage_spaces.items():
+            count = 0
+            for item in v:
+                count += get_amount_in_slot(item)
+            storage_counts[k] = count
+        for character in characters:
+            bag_count = 0
+            for bag in character["bags"]:
+                bag_count += get_amount_in_slot(bag)
+            bags = [
+                bag["inventory"] for bag in filter(None, character["bags"])
+            ]
+            bag_total = 0
+            for bag in bags:
+                for item in bag:
+                    bag_total += get_amount_in_slot(item)
+            equipment = 0
+            for piece in character["equipment"]:
+                equipment += get_amount_in_slot(piece)
+            count = bag_total + equipment + bag_count
+            storage_counts[character["name"]] = count
+        seq = [k for k, v in storage_counts.items() if v]
+        total = 0
+        output = []
+        if not seq:
+            return total, output, item_result
+        else:
+            longest = len(max(seq, key=len))
+            if longest < 8:
+                longest = 8
+            output = ["LOCATION{}COUNT".format(" " * (longest - 5)), "--------{}|-----".format("-" * (longest - 6))]
+            storage_counts = OrderedDict(sorted(storage_counts.items(), key=lambda kv: kv[1], reverse=True))
+            table_string = ''
+            for k, v in storage_counts.items():
+                if v:
+                    total += v
+                    output.append("{} {} | {}".format(k.upper(), " " * (longest - len(k)), v))
+            output.append("--------{}------".format("-" * (longest - 10)))
+            output.append("TOTAL:{}{}".format(" " * (longest - 2), total))
+
+            return total, output, item_result
+
 
     @commands.command(description="After entering this command, the bot will direct message the user to request a GW2 API key. This key will be saved in a database and linked with the discord account. Future bot commands will query the GW2 API for your account.", brief = "Set a GW2 API key to be used for API discord commands.")
     @commands.check(turtlecheck.if_seaguard)
@@ -145,37 +223,42 @@ class ApiControls:
         else:
             api_key = ans.content
             discord_id = ctx.author.id
-            if check_valid_api_key(api_key):
-                try:
-                    try:
-                        conn
-                    except NameError:
-                        conn = tc.get_conn()
-                    cur = conn.cursor()
-                    #get the id of any existing key for this person
-                    sqlStr = "SELECT id FROM turtle.api_keys WHERE discord_id = " + str(discord_id)
-                    cur.execute(sqlStr)
-                    result = cur.fetchall()
-                    try:
-                        to_be_deleted = result[0][0]
-                        if to_be_deleted is None:
-                            to_be_deleted = -1
-                    except:
-                        to_be_deleted = -1
-                    sqlStr = "INSERT INTO turtle.api_keys (discord_id, api_key) VALUES (" + str(discord_id) + ", '" + api_key + "');"
-                    cur.execute(sqlStr)
-                    conn.commit()
-                    #now that we've successfully inserted, delete the previous key
-                    if to_be_deleted != -1:
-                        sqlStr = "DELETE FROM turtle.api_keys WHERE id = " + str(to_be_deleted)
-                        print(sqlStr)
-                        cur.execute(sqlStr)
-                        conn.commit()
-                    await ctx.author.send('You entered the following GW2 API key: `{0}` ```\nThis key has been linked to your discord username. If you would like to update it in the future, just re-run this command from any text channel.```'.format(ans.content))
-                except:
-                   await ctx.author.send('Something went wrong.  Tell Rev, he wrote this part')
+            if await self.check_valid_api_key(api_key):
+                with ctx.author.dm_channel.typing():
+                    checking_message = await ctx.author.send('Checking API key permissions...')
+                    if await self.check_api_key_works(api_key):
+                        try:
+                            try:
+                                conn
+                            except NameError:
+                                conn = tc.get_conn()
+                            cur = conn.cursor()
+                            #get the id of any existing key for this person
+                            sqlStr = "SELECT id FROM turtle.api_keys WHERE discord_id = " + str(discord_id)
+                            cur.execute(sqlStr)
+                            result = cur.fetchall()
+                            try:
+                                to_be_deleted = result[0][0]
+                                if to_be_deleted is None:
+                                    to_be_deleted = -1
+                            except:
+                                to_be_deleted = -1
+                            sqlStr = "INSERT INTO turtle.api_keys (discord_id, api_key) VALUES (" + str(discord_id) + ", '" + api_key + "');"
+                            cur.execute(sqlStr)
+                            conn.commit()
+                            #now that we've successfully inserted, delete the previous key
+                            if to_be_deleted != -1:
+                                sqlStr = "DELETE FROM turtle.api_keys WHERE id = " + str(to_be_deleted)
+                                print(sqlStr)
+                                cur.execute(sqlStr)
+                                conn.commit()
+                            await ctx.author.send('You entered the following GW2 API key: `{0}` ```\nThis key has been succesfully linked to your discord username. If you would like to update it in the future, just re-run this command from any text channel.```'.format(ans.content))
+                        except:
+                           await ctx.author.send('Something went wrong.  Tell Rev, he wrote this part')
+                    else:
+                        await ctx.author.send('```The API key was not saved. Turtle-bot tested the API key and found that it did not have the required permissions. Make sure you allow at least [Account][Characters][Inventories][Progression] permissions when creating your API key.```')
             else:
-                await ctx.author.send('That API key looks like it is the wrong length, or something.  Ask Rev to take a look')
+                await ctx.author.send('```That API key looks like it is the wrong length, or something.  Questions? Ask Rev or Renay to take a look.```')
 
         await message.delete()
 
@@ -213,6 +296,21 @@ class ApiControls:
                 await ctx.author.send('Your GW2 API key has been preserved...for now.')
         await message.delete()
 
+    async def check_valid_api_key(self, key):
+        try:
+            return len(key) == 72
+        except:
+            return False
+        return False
+
+    async def check_api_key_works(self,key):
+        try:
+            endpoints = ["account/bank", "account/inventory", "account/materials", "characters?page=0&page_size=200","account/raids"]
+            results = await self.call_multiple(endpoints, key=key)
+            return True
+        except:
+            return False
+
 
 def get_api_key(discord_id):
     try:
@@ -235,9 +333,4 @@ def setup(bot):
     bot.add_cog(ApiControls(bot))
 
 
-def check_valid_api_key(key):
-    try:
-        return len(key) == 72
-    except:
-        return False
-    return False
+

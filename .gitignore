@@ -1,6 +1,7 @@
 turtle_credentials.py
 turtle_credentials_phantom.py
 the_grand_game.txt
+cogs/easter_egg.py
 cogs/__pycache__
 *.pc
 

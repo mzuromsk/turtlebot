@@ -11,7 +11,7 @@ import aiohttp
 
 from cogs.exceptions import APIError, APIInactiveError, APIInvalidKey, APIKeyError
 
-extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util', 'cogs.grandturtlegame']
+extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util', 'cogs.grandturtlegame', 'cogs.easter_egg', 'cogs.examplegame']
 
 class TurtleBot(commands.Bot):
     def __init__(self):
@@ -30,24 +30,21 @@ class TurtleBot(commands.Bot):
         print('Connected to the server!')
         print('Username: {0.name}\nID: {0.id}'.format(self.user))
 
-    async def error_handler(self, ctx, exc):
-        user = ctx.author
-        if isinstance(exc, APIKeyError):
-            await ctx.send(exc)
-            return
-        if isinstance(exc, APIInactiveError):
-            await ctx.send("{.mention}, the API is currently down. "
-                           "Try again later.".format(user))
-            return
-        if isinstance(exc, APIInvalidKey):
-            await ctx.send("{.mention}, your API key is invalid! Remove your "
-                           "key and add a new one".format(user))
-            return
-        if isinstance(exc, APIError):
-            await ctx.send(
-                "{.mention}, API has responded with the following error: "
-                "`{}`".format(user, exc))
-            return
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            m, s = divmod(error.retry_after, 60)
+            await ctx.message.author.send('That command is still on cooldown. You can retry it in `{0:.0f} min` and `{1:.0f} s`.'.format(m, s))
+        if isinstance(error, APIKeyError):
+            await ctx.message.author.send(error)
+        if isinstance(error, APIInactiveError):
+            await ctx.message.author.send("{0}, the API is currently down. Try again later.".format(ctx.message.author))
+        if isinstance(error, APIInvalidKey):
+            await ctx.message.author.send("{0}, your API key is invalid! Remove your key and add a new one".format(ctx.message.author))
+        if isinstance(error, APIError):
+            await ctx.message.author.send("{0}, API has responded with the following error: `{1}`".format(user, error))
+        raise error
+
+
 
     async def on_message(self, message):
         if not message.author.bot:

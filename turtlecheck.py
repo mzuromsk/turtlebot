@@ -55,9 +55,22 @@ def has_unlocked_hidden_key(current_question_step):
         if get_active_step(ctx.message.author.id) >= current_question_step:
             return True
         else:
-            await ctx.message.author.send('```Hmmm, seem\'s like you might be ahead of the game. *Cough*```' + '```You haven\'t unlocked the ability to use that hidden key yet. To unlock it, make sure you have earned all prior keys.```')
+            game_id = get_active_game()
+            if game_id == -1:
+                await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let Rev or Renay know.```')
+            else:
+                await ctx.message.author.send('```Hmmm, seem\'s like you might be ahead of the game. *Cough*```' + '```You haven\'t unlocked the ability to use that hidden key yet. To unlock it, make sure you have earned all prior keys.```')
             return False
     return commands.check(predicate)
+
+async def if_active_game(ctx):
+    game_id = get_active_game()
+    if game_id == -1:
+        await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let Rev or Renay know.```')
+        return False
+    else:
+        return True
+
 
 def get_api_key(discord_id):
     try:

@@ -262,11 +262,18 @@ class ApiControls:
 
         await message.delete()
 
+    @commands.command(description="After entering this command, the bot will direct message the user a video guide demonstrating how to setup an API key and link it your discord account.", brief = "Sends a video guide for GW2 API key setup.")
+    @commands.check(turtlecheck.if_seaguard)
+    async def help_api_key(self, ctx):
+        await ctx.message.delete()
+        await ctx.message.author.send("The following video walks you through setting up a GW2 API key and linking it to your discord account.")
+
+
     @commands.command(description="After entering this command, the bot will direct message the user to confirm that you would like to delete your GW2 API key.", brief = "Delete your GW2 API key.")
     @commands.check(turtlecheck.if_seaguard)
     async def clear_api_key(self, ctx):
         await ctx.message.delete()
-        out = 'Please confirm that you would like to delete your key (if you change your mind at a later date, you will have to re-set it). ```\nClick ✅ to confirm, ❌ to cancel```'
+        out = 'Please confirm that you would like to delete your key (if you change your mind at a later date, you will have to re-set it). ```\nClick ✅ to confirm, ❌ to cancel.```'
         try:
             message = await ctx.author.send(out)
             await message.add_reaction('✅')

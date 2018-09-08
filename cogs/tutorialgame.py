@@ -24,10 +24,10 @@ class TutorialGameControls:
     async def game_start_tutorial(self, ctx):
         #You must hand list the number of steps and substeps
         #Create a list of length step, where each step value is the number of substeps in that step
-        game_steps = [1,4,1,1,2,1,1]
+        game_steps = [1,1,1,1,1,3]
         game_name = "Tutorial"
         num_days = 0
-        num_hours = 0.2
+        num_hours = 0.5
         await self.GameControls.start_the_game(ctx, game_name, game_steps, num_days, num_hours)
 
     @commands.command(brief="Join the current [ST] Grand Game.", description="Join and start a currently running Grand Game. Note: If you have already started the current game, this command will completely reset your progress. Must be a Seaguard to participate.")
@@ -70,10 +70,11 @@ class TutorialGameControls:
 
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['game_seaguards'])
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @turtlecheck.has_unlocked_hidden_key(2)
+    @commands.cooldown(1,120,commands.BucketType.user)
     async def game_seaguard(self, ctx, description=True):
         try:
             await ctx.message.delete()
@@ -81,212 +82,193 @@ class TutorialGameControls:
             pass
 
         #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey2'
+        gamename ='Tutorial'
+        keyname='game_seaguard'
         step_number = 2
-        substeps=4
-        cooldown=5
-        timer=5
-
-        start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-
-        step_1_settings = game_class.Choose_One_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
-        step_1_settings.clue_text='Take a load off and wander through the gardens of the Central Plaza. Some might say the Gods themselves tend to the garden, but which of the gods “fought the hardest and rightfully earned their spot among the six” (More of a Joke about GW: Nightfall)'
-        step_1_settings.emoji_answer_key_text = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
-        step_1_settings.emoji = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
-        step_1_settings.correct_item_in_list = 3
-        step_1_settings.timer=5
-
-        step_2_settings = game_class.Combination_Card_Settings(ctx, gamename, keyname, step_number, 2, substeps, cooldown, timer, description)
-        step_2_settings.clue_text='In order of descending cleave.'
-        step_2_settings.icon_key_per_line = 2
-
-        emoji_guard = discord.utils.get(ctx.author.guild.emojis, name='Guardian_icon')
-        emoji_thief = discord.utils.get(ctx.author.guild.emojis, name='Thief_icon')
-
-        step_2_settings.emoji_answer_key_text = ['Guardian','Thief','Fire Elementalist','Water Elementalist']
-        step_2_settings.emoji = [emoji_guard,emoji_thief,'\U0001F525','\U0001F4A7']
-        step_2_settings.correct_combination= [3,1,2,4]
-        step_2_settings.timer=1
-
-        step_3_settings = game_class.Text_Card_Settings(ctx, gamename, keyname, step_number, 3, substeps, cooldown, timer, description)
-        step_3_settings.clue_text='Exploring near Uzolan’s Mechanical Orchestra you\'ll find yourself wondering \"how do you walk on these stones all day long?\"'
-        step_3_settings.correct_answer_text=[('exact','You get used to it.'),('keyword','used')]
-
-        step_4_settings = game_class.Get_In_Game_Card_Settings(ctx, gamename, keyname, step_number, 4, substeps, cooldown, timer, description)
-        step_4_settings.clue_text='You\'d think ore associated with the creatures responsible for the partial destruction of Tyria would be valuable, but turns out it is complete garbage. Still, go ahead and make sure you have 500 of the stuff.'
-        #step_4_settings.item_id=23794
-        step_4_settings.item_id=46733
-        step_4_settings.required_amount=500
-
-        earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next one is $game_testkey3.'
-
-        question_cards_settings = [step_1_settings, step_2_settings,step_3_settings, step_4_settings]
-
-        await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
-
-    @commands.command(hidden=True)
-    @commands.check(turtlecheck.if_seaguard)
-    @commands.check(turtlecheck.if_api_key)
-    @turtlecheck.has_unlocked_hidden_key(3)
-    async def game_testkey3(self, ctx, description=True):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
-        #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey3'
-        step_number = 3
         substeps=1
-        cooldown=5
+        cooldown=2
         timer=5
 
         start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        start_card_settings.description = False
 
-        step_1_settings = game_class.Choose_One_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
-        step_1_settings.clue_text='Take a load off and wander through the gardens of the Central Plaza. Some might say the Gods themselves tend to the garden, but which of the gods “fought the hardest and rightfully earned their spot among the six” (More of a Joke about GW: Nightfall)'
-        step_1_settings.emoji_answer_key_text = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
-        step_1_settings.emoji = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
-        step_1_settings.correct_item_in_list = 3
-        step_1_settings.timer=5
+        step_1_settings = game_class.Text_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
+        step_1_settings.clue_text='Listen to the audio file provided below. Respond below with the name of this song. Following the input instructions above, make sure you check your spelling.'
+        step_1_settings.correct_answer_text=[('exact','Fear not this night')]
+        step_1_settings.file_attachments=['audio/FearNotThisNight.mp3']
 
         earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next one is $game_testkey4.'
+        earned_key_card_settings.clue_text = 'The song "Fear not this Night" is played at a key point of the original GW2 story, where you cleanse corruption in this region of the game. Your next hidden key is $game_thenameofthisregion.'
 
         question_cards_settings = [step_1_settings]
 
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['game_ruinsoforr','game_ruins_of_orr','game_ruins_orr','game_ruinsorr'])
+    @commands.check(turtlecheck.if_seaguard)
+    @commands.check(turtlecheck.if_api_key)
+    @commands.cooldown(1,120,commands.BucketType.user)
+    @turtlecheck.has_unlocked_hidden_key(3)
+    async def game_orr(self, ctx, description=True):
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
+        #Set overall hidden key paramaters
+        gamename ='Tutorial'
+        keyname='game_orr'
+        step_number = 3
+        substeps=1
+        cooldown=2
+        timer=5
+
+        start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        start_card_settings.description = False
+
+        step_1_settings = game_class.Choose_One_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
+        step_1_settings.clue_text='Which of the following is not a zone in Orr?'
+        step_1_settings.emoji_answer_key_text = ['Straits of Devastation','Malchor\'s Leap','Fireheart Rise','Cursed Shore']
+        step_1_settings.emoji = ['\U0001F1F8','\U0001F1F2','\U0001F1EB','\U0001F1E8']
+        step_1_settings.correct_item_in_list = 3
+        step_1_settings.icon_key_per_line = 2
+        step_1_settings.timer=5
+
+        earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        earned_key_card_settings.clue_text = 'Trophys and trinkets exist galore in GW2. Of the top tier trophies, which one might be most sacred to a turtle? Your next hidden key is $game_thenameofthisT6material.'
+
+        question_cards_settings = [step_1_settings]
+
+        await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
+
+    @commands.command(hidden=True, aliases=['game_armoredscales','game_armored_scale','game_armored_scales'])
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @turtlecheck.has_unlocked_hidden_key(4)
-    async def game_testkey4(self, ctx, description=True):
+    @commands.cooldown(1,120,commands.BucketType.user)
+    async def game_armoredscale(self, ctx, description=True):
         try:
             await ctx.message.delete()
         except:
             pass
 
         #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey4'
+        gamename ='Tutorial'
+        keyname='game_armoredscale'
         step_number = 4
         substeps=1
-        cooldown=5
+        cooldown=2
         timer=5
 
         start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        start_card_settings.description = False
 
+        step_1_settings = game_class.Combination_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
+        step_1_settings.clue_text='Rank the following scales in ascending tier order, from lowest tier to highest.'
+        step_1_settings.icon_key_per_line = 2
 
-        step_2_settings = game_class.Combination_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
-        step_2_settings.clue_text='In order of descending cleave.'
-        step_2_settings.icon_key_per_line = 2
+        emoji_smallscale = discord.utils.get(ctx.author.guild.emojis, name='smallscale_icon')
+        emoji_scale = discord.utils.get(ctx.author.guild.emojis, name='scale_icon')
+        emoji_largescale = discord.utils.get(ctx.author.guild.emojis, name='largescale_icon')
+        emoji_armoredscale = discord.utils.get(ctx.author.guild.emojis, name='armoredscale_icon')
 
-        emoji_guard = discord.utils.get(ctx.author.guild.emojis, name='Guardian_icon')
-        emoji_thief = discord.utils.get(ctx.author.guild.emojis, name='Thief_icon')
-
-        step_2_settings.emoji_answer_key_text = ['Guardian','Thief','Fire Elementalist','Water Elementalist']
-        step_2_settings.emoji = [emoji_guard,emoji_thief,'\U0001F525','\U0001F4A7']
-        step_2_settings.correct_combination= [3,1,2,4]
-        step_2_settings.timer=1
+        step_1_settings.emoji_answer_key_text = ['Armored Scale','Scale','Small Scale','Large Scale']
+        step_1_settings.emoji = [emoji_armoredscale, emoji_scale, emoji_smallscale, emoji_largescale]
+        step_1_settings.correct_combination= [3,2,4,1]
+        step_1_settings.timer=1
 
         earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next one is $game_testkey5.'
+        earned_key_card_settings.clue_text = 'There are absolutely no culinary applications for the magical substance that constitutes the next hidden key. Your next key is $game_nameofthisrubypowderhere.'
 
-        question_cards_settings = [step_2_settings]
+        question_cards_settings = [step_1_settings]
 
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['game_bloodstone_dust', 'game_bloodstone'])
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @turtlecheck.has_unlocked_hidden_key(5)
-    async def game_testkey5(self, ctx, description=True):
+    @commands.cooldown(1,120,commands.BucketType.user)
+    async def game_bloodstonedust(self, ctx, description=True):
         try:
             await ctx.message.delete()
         except:
             pass
 
         #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey5'
+        gamename ='Tutorial'
+        keyname='game_bloodstonedust'
         step_number = 5
-        substeps=2
-        cooldown=5
+        substeps=1
+        cooldown=2
         timer=5
 
         start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        start_card_settings.description = False
 
-        step_3_settings = game_class.Text_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
-        step_3_settings.clue_text='Who is the current leader of ST in GW2?'
-        step_3_settings.correct_answer_text=[('keyword','River')]
-
-        step_4_settings = game_class.Get_In_Game_Card_Settings(ctx, gamename, keyname, step_number, 2, substeps, cooldown, timer, description)
-        step_4_settings.clue_text='After stepping foot out of the port city you find an orchard. A vendor who would be fitting as a librarian offers tools to help decore. Don\'t skimp.'
-        #step_4_settings.item_id=23794
-        step_4_settings.item_id=23794
-        step_4_settings.required_amount=1
+        step_1_settings = game_class.Get_In_Game_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
+        step_1_settings.clue_text='You\'d think ore with the same name as that responsible for the partial destruction of Tyria would be valuable, but turns out it\'s complete garbage. Still, go ahead and make sure you have 100 of the stuff. You never know...'
+        step_1_settings.item_id=46733
+        step_1_settings.required_amount=100
 
         earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next key is $game_testkey6.'
+        earned_key_card_settings.clue_text = 'Strangely enough, this iconic city was not destroyed by a dragon per-say, but rather through the work of a Sylvari. A destruction salad appetizer if you will. Your next hidden key: $game_thenameofthiscity.'
 
-        question_cards_settings = [step_3_settings, step_4_settings]
+        question_cards_settings = [step_1_settings]
 
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['game_lions_arch','game_la','game_lionarch'])
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @turtlecheck.has_unlocked_hidden_key(6)
-    async def game_testkey6(self, ctx, description=True):
+    @commands.cooldown(1,120,commands.BucketType.user)
+    async def game_lionsarch(self, ctx, description=True):
         try:
             await ctx.message.delete()
         except:
             pass
 
         #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey6'
+        gamename ='Tutorial'
+        keyname='game_lionsarch'
         step_number = 6
-        substeps=1
-        cooldown=5
+        substeps=3
+        cooldown=2
         timer=5
 
         start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
+        start_card_settings.description = False
+
+        step_1_settings = game_class.Choose_One_Card_Settings(ctx, gamename, keyname, step_number, 1, substeps, cooldown, timer, description)
+        step_1_settings.clue_text='Looking at map of LA from a griffon\'s vantage point, what animal is **not** represented (but absolutely should be)?'
+        step_1_settings.emoji_answer_key_text = ['Starfish','Lobster','Turtle']
+
+        emoji_starfish = discord.utils.get(ctx.author.guild.emojis, name='starfish')
+        emoji_lobster = discord.utils.get(ctx.author.guild.emojis, name='lobster')
+
+        step_1_settings.emoji = [emoji_starfish,emoji_lobster,'\U0001F422']
+        step_1_settings.correct_item_in_list = 3
+        step_1_settings.icon_key_per_line = 3
+        step_1_settings.timer=5
+
+        step_2_settings = game_class.Text_Card_Settings(ctx, gamename, keyname, step_number, 2, substeps, cooldown, timer, description)
+        step_2_settings.clue_text='What is the name of the point of interest closest to the pictured location?'
+        step_2_settings.correct_answer_text=[('keyword','Deverol Garden')]
+        step_2_settings.image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/488059499928748102/LA_Unknown_POI.png'
+
+        step_3_settings = game_class.Get_In_Game_Card_Settings(ctx, gamename, keyname, step_number, 3, substeps, cooldown, timer, description)
+        step_3_settings.clue_text='After stepping foot out of the port city you find an orchard. A vendor who would be fitting as a librarian offers tools to help decore. Don\'t skimp.'
+        step_3_settings.item_id=23794
+        step_3_settings.required_amount=1
 
         earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next key is $game_testkey7.'
+        earned_key_card_settings.clue_text = 'The game is done.'
 
-        await self.GameControls.run_hidden_key(ctx, earned_key_card_settings)
+        question_cards_settings = [step_1_settings, step_2_settings, step_3_settings]
 
-    @commands.command(hidden=True)
-    @commands.check(turtlecheck.if_seaguard)
-    @commands.check(turtlecheck.if_api_key)
-    @turtlecheck.has_unlocked_hidden_key(7)
-    async def game_testkey7(self, ctx, description=True):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
+        await self.GameControls.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
 
-        #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey7'
-        step_number = 7
-        substeps=1
-        cooldown=5
-        timer=5
-
-        start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-
-        earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'This is the final one. This would send a celebration card when it\'s done.'
-        earned_key_card_settings.image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/486011052161499136/Tutorial.png'
-
-        await self.GameControls.run_hidden_key(ctx, earned_key_card_settings)
 
 def setup(bot):
     bot.add_cog(TutorialGameControls(bot))

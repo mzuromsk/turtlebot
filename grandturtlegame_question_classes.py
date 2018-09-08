@@ -26,6 +26,7 @@ class Start_Card_Settings:
         self.substeps = substeps
         self.cooldown = cooldown
         self.timer = timer
+        self.description = True
 
 class Choose_One_Card_Settings:
     def __init__(self, ctx, gamename='Current Game Name', keyname='Current Key Name', step_number=1, substep_number=1, substeps=1, cooldown=5, timer=5, question_description = True):

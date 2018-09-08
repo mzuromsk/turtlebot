@@ -57,8 +57,7 @@ class UtilityControls:
                                 print('now adding roles for ' + str(turtle[1]))
                                 add_all_roles(turtle[0], turtle[4], conn, cur)
                                 print('completed ' + str(turtle[1]))
-                                await ctx.send('Finished creating record and roles for: ' + turtle[1])
-
+                                await ctx.message.author.send('Finished creating record and roles for: ' + turtle[1])
 
 
     @commands.command(description="This shuts down the bot process. Contact a bot administrator [Rev, Renay] if you need the bot shutdown.", brief="Shut down turtlebot. Requires bot administrator privileges.")
@@ -92,7 +91,7 @@ def add_all_roles(turtle_id, roles, conn, cur):
     try:
         conn
     except NameError:
-                                    conn = tc.get_conn()
+        conn = tc.get_conn()
 
     for role in roles:
         sqlStr = "INSERT INTO turtle.turtle_roles(role_id, turtle_id) VALUES (" + str(role.id) + ", " + str(turtle_id) + ");"

@@ -44,14 +44,13 @@ class TurtleBot(commands.Bot):
             await ctx.message.author.send("{0}, API has responded with the following error: `{1}`".format(user, error))
         raise error
 
-
-
     async def on_message(self, message):
         if not message.author.bot:
             await self.process_commands(message)
         if message.content.startswith('$game'):
             try:
                 await message.delete()
+                await message.author.send('You entered the following game/hidden key command: `{0}`.```If this was an attempt at finding a hidden key, and you were succesful, the bot will message you with the next game card. If not, feel free to try again.```'.format(message.content))
             except:
                 return
 

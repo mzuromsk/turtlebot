@@ -44,7 +44,7 @@ class GrandTurtleGameControls:
         await self.start_the_game(ctx, game_name, game_steps, num_days, num_hours)
 
     @commands.command(brief="Briefly proclaim your Grand Game prowess. [Cooldown: 5 min]")
-    @commands.cooldown(1,300,commands.BucketType.user)
+    #@commands.cooldown(1,300,commands.BucketType.user)
     async def game_rank(self,ctx):
         try:
             await ctx.message.delete()
@@ -221,7 +221,7 @@ class GrandTurtleGameControls:
         #If an API key is going to be needed for this game, check to see if the user has a valid saved API key.
         #If they don't message them asking them to run the setup API command. If they do, continue
         if api.get_api_key(ctx.message.author.id)==None:
-            await ctx.message.author.send("```This Grand Game requires that you have a linked GW2 API key to participate. \nIn order to link an API key to your discord account, enter the command $set_api_key.\nFor a video guide on how to create an API Key (and select the correct permissions), enter the command $help_api_key.``````In order to participate in this Grand Game, make sure you allow at least [Account][Characters][Inventories][Progression] permissions when creating your API key.```")
+            await ctx.message.author.send("```This Grand Game requires that you have a linked GW2 API key to participate. \nIn order to link an API key to your discord account, enter the command $set_api_key.\nFor a video guide on how to create an API Key (and select the correct permissions), enter the command $help_api_key.``````In order to participate in this Grand Game, make sure you allow at least [Account][Inventories][Characters][Progression] permissions when creating your API key.```")
             return
 
         #Add user to leaderboard with no steps completed and the timestamp of when they started
@@ -249,15 +249,15 @@ class GrandTurtleGameControls:
         question_description_string = "This game has " + str(card_settings.steps) + " `$hiddenkeys`. To finish the game, you must discover and earn all " + str(card_settings.steps) + " in order (a later key only works if you have earned all preceding keys). ```All hidden keys are of the form: $game_insertnameofkeyhere.```  ```Some keys you will earn merely from discovering them, others may require you to answer followup questions to earn.```\n"
         embed.add_field(name=question_string, value=question_description_string, inline=False)
 
-        emoji_api = discord.utils.get(ctx.author.guild.emojis, name='api_icon')
+##        emoji_api = discord.utils.get(ctx.author.guild.emojis, name='api_icon')
         emoji_chest = discord.utils.get(ctx.author.guild.emojis, name='chest_icon')
         emoji_trophy = discord.utils.get(ctx.author.guild.emojis, name='trophy_icon')
         emoji_golem = discord.utils.get(ctx.author.guild.emojis, name='blue_golem')
 
-        if card_settings.api_key_required:
-            api_string = str(emoji_api) + ' | GW2 API Key'
-            api_description_string = 'This game requires a GW2 API key to play. To set an API key, use `$set_api_key`. For help, use `$help_api_key`.'
-            embed.add_field(name=api_string, value=api_description_string, inline=False)
+##        if card_settings.api_key_required:
+##            api_string = str(emoji_api) + ' | GW2 API Key'
+##            api_description_string = 'This game requires a GW2 API key to play. To set an API key, use `$set_api_key`. For help, use `$help_api_key`.'
+##            embed.add_field(name=api_string, value=api_description_string, inline=False)
 
         if card_settings.image_url != '' and card_settings.image_url is not None:
            embed.set_image(url=card_settings.image_url)
@@ -323,21 +323,30 @@ class GrandTurtleGameControls:
             cooldown_string = ':repeat: | ' + str(card_settings.cooldown) + ' minute cooldown'
             cooldown_description_string = 'This hidden key has a ' + str(card_settings.cooldown) + ' minute cooldown (measured from when you entered the key). If you fail, you will have to wait the remaining cooldown period to retry the key.\n'
 
-        stopwatch_string = ':stopwatch: | ' + str(card_settings.timer) + ' minutes'
+        stopwatch_string = ':stopwatch: | ' + str(card_settings.timer) + ' minute question time limit'
 
         ready_string = 'Ready to get started, {0}?\n'.format(card_settings.ctx.author.name)
         ready_description_string = 'When you are ready to begin, click ✅. You have ' + str(card_settings.timer) + ' minutes before this attempt will time out and you must re-enter the key.'
 
         time = datetime.datetime.utcnow()
 
-        #Create the start card embed message
-        embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
-        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479126995599491078/key.png')
-        embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-        embed.add_field(name=substeps_string, value=substeps_description_string, inline=False)
-        embed.add_field(name=cooldown_string, value=cooldown_description_string, inline=False)
-        embed.add_field(name=stopwatch_string, value=stopwatch_description_string, inline=False)
-        embed.add_field(name=ready_string, value=ready_description_string)
+        if card_settings.description:
+            #Create the start card embed message and show all descriptions
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479126995599491078/key.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name=substeps_string, value=substeps_description_string, inline=False)
+            embed.add_field(name=cooldown_string, value=cooldown_description_string, inline=False)
+            embed.add_field(name=stopwatch_string, value=stopwatch_description_string, inline=False)
+            embed.add_field(name=ready_string, value=ready_description_string)
+
+        else:
+            #Create the start card embed message and hide descriptions
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479126995599491078/key.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name=substeps_string+'\n\n'+cooldown_string+'\n\n'+stopwatch_string+'\n\n'+ready_string, value=ready_description_string)
+
 
         #Send it to the user
         start_card = await card_settings.ctx.author.send(embed=embed)
@@ -821,7 +830,15 @@ class GrandTurtleGameControls:
             if str(ans) == '✅':
                 with question_card_settings.ctx.author.dm_channel.typing():
                     timing_card = await self.create_timing_card(question_card_settings)
-                    await asyncio.sleep(60)
+
+                    max_wait = 5
+
+                    for minute in range(0, max_wait):
+                        time_message = await question_card_settings.ctx.author.send('```Approximate time remaining for scan: {0} min```'.format(max_wait-minute))
+                        await asyncio.sleep(60)
+                        await time_message.delete()
+
+
                     total, output, item_result = await self.api.simple_search(question_card_settings.ctx, question_card_settings.item_id)
                     await timing_card.delete()
                     if total >= question_card_settings.required_amount:
@@ -955,6 +972,7 @@ class GrandTurtleGameControls:
     async def update_leaderboard(self, ctx, shutdown=False):
 
         game_info = await get_active_game_info()
+        game_id = game_info[0]
         game_name = game_info[1]
         game_start_time = game_info[3]
         game_start_time_est = game_start_time-datetime.timedelta(hours=4)
@@ -1007,7 +1025,7 @@ class GrandTurtleGameControls:
             return the_grand_game
 
         #Leaderboard display options for fancy version
-        last_step_number = 7
+        last_step_number = get_number_of_game_steps(game_id)
         max_number_full_display = 5
         max_number_on_leaderboard = 20
         number_icons_per_line =15
@@ -1186,6 +1204,11 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True,brief='ADMIN ONLY')
     @commands.check(turtlecheck.if_admin)
     async def game_begin_countdown(self, ctx):
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
         #You must hand list the number of steps and substeps
         #Create a list of length step, where each step value is the number of substeps in that step
         game_info = await get_active_game_info()
@@ -1220,7 +1243,11 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True,brief='ADMIN ONLY')
     @commands.check(turtlecheck.if_admin)
     async def game_shutdown_now(self, ctx):
-        await asyncio.sleep(2)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
         game_info = await get_active_game_info()
         game_name = game_info[1]
         await self.shutdown_grand_game(ctx, game_name)
@@ -1250,7 +1277,7 @@ class GrandTurtleGameControls:
 
     async def create_endgame_card(self, ctx, game_name, turtle, place, number_of_competitors, number_of_game_steps):
         #Format all the strings
-        description_string = "```Grand Game: {0} has finished!```".format(game_name)
+        description_string = "```Grand Game: {0} has closed!```".format(game_name)
         gamename_string = "Grand Game: " + game_name
 
         emoji_trophy = discord.utils.get(ctx.author.guild.emojis, name='trophy_icon')

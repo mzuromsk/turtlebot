@@ -12,7 +12,7 @@ async def if_admin(ctx):
         return False
 
 async def if_seaguard(ctx):
-    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id() or ctx.message.author.id == tc.get_kusi_id():
+    if ctx.message.author.id == tc.get_renay_id() or ctx.message.author.id == tc.get_rev_id() or ctx.message.author.id == tc.get_kusi_id() or ctx.message.author.id == tc.get_tuna_id():
         return True
     for role in ctx.message.author.roles:
         #Check if seaguard

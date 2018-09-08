@@ -43,6 +43,70 @@ class GrandTurtleGameControls:
         num_hours = 1
         await self.start_the_game(ctx, game_name, game_steps, num_days, num_hours)
 
+    @commands.command(brief="Briefly proclaim your Grand Game prowess. [Cooldown: 5 min]")
+    @commands.cooldown(1,300,commands.BucketType.user)
+    async def game_rank(self,ctx):
+        try:
+            await ctx.message.delete()
+        except:
+            pass
+
+        most_recent_game_placement = await get_grand_game_placement(ctx.message.author.id)
+
+        if most_recent_game_placement==0:
+            await ctx.message.author.send("```Either a new game is currently running, or you did not place in the most recently completed Siege Turtle Grand Game. No game rank finisher for you (for now). Join us for the next one!```")
+        elif most_recent_game_placement>3:
+            message= await self.create_rank_card(ctx, most_recent_game_placement)
+            await asyncio.sleep(10)
+            await message.delete()
+        elif most_recent_game_placement==3:
+            message= await self.create_rank_card(ctx, most_recent_game_placement)
+            await asyncio.sleep(15)
+            await message.delete()
+        elif most_recent_game_placement==2:
+            message= await self.create_rank_card(ctx, most_recent_game_placement)
+            await asyncio.sleep(15)
+            await message.delete()
+        elif most_recent_game_placement==1:
+            message= await self.create_rank_card(ctx, most_recent_game_placement)
+            await asyncio.sleep(20)
+            await message.delete()
+
+    async def create_rank_card(self, ctx, place):
+        #Format all the strings
+        if ctx.message.author.nick is not None:
+            description_string = "**{0}**".format(ctx.message.author.nick)
+        else:
+            description_string= "**{0}**".format(ctx.message.author.name)
+
+        emoji_trophy = discord.utils.get(ctx.author.guild.emojis, name='trophy_icon')
+
+        if place==1:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087907434397706/TurtleGamesGold.gif'
+            place_description_string = "*A God Walking Amongst Mere Mortals*"
+            color_choice = 13942830
+        elif place==2:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087912891056128/TurtleGamesSilver.gif'
+            place_description_string = "*My Guild Hall Smells of Rich Mahogonay*"
+            color_choice = 13882323
+        elif place==3:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087904359841792/TurtleGamesBronze.gif'
+            place_description_string = "*I Have Many Leatherbound Books*"
+            color_choice = 8938544
+        else:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087909825150978/TurtleGamesParticipation.gif'
+            place_description_string = "*I'm Kind of a Big Deal*"
+            color_choice = 3635722
+
+        #Create the end game card embed message
+        embed = discord.Embed(description=description_string, colour=color_choice)
+        embed.set_thumbnail(url=ctx.message.author.avatar_url)
+        embed.add_field(name=str(emoji_trophy) + ' | Finished: **#{0}**'.format(place), value=place_description_string, inline=False)
+
+        embed.set_image(url=image_url)
+        rank_card = await ctx.send(embed=embed)
+        return(rank_card)
+
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
@@ -434,25 +498,78 @@ class GrandTurtleGameControls:
 
 
     async def create_earned_key_card(self, card_settings):
-        #Format all the strings
-        description_string = "```$" + card_settings.keyname + "```" + "\n**Congratulations!** You have now fully `earned` the hidden key `$" + card_settings.keyname + "`!\n\n \n"
-        gamename_string = "Grand Game: " + card_settings.gamename
+        #Check to see if we just finished the game by checking the final game step
+        game_id = get_active_game()
+        number_of_game_steps = get_number_of_game_steps(game_id)
 
-        emoji_trophy = discord.utils.get(card_settings.ctx.author.guild.emojis, name='trophy_icon')
+        #Send a card with a earned-key card with a clue for the next key
+        if card_settings.step_number==number_of_game_steps:
+            #Format all the strings
+            description_string = "```Congratulations! \nYou have finished Grand Game: \n{0}```".format(card_settings.gamename)
+            gamename_string = "Grand Game: " + card_settings.gamename
 
-        leaderboard_description_string = 'Your progress in game has been saved. The leaderboard display will update at the next game checkpoint.'
+            time = datetime.datetime.utcnow()
+            game_info = await get_active_game_info()
+            game_start_time = game_info[3]-datetime.timedelta(hours=4)
+            game_end_time = game_info[4]-datetime.timedelta(hours=4)
+            gametime_string = ':hourglass: | Game Duration'
+            gametime_description_string = "```This game began: \n{0} \nThis game will end: \n{1}```".format(game_start_time.strftime("%I:%M%p EST %A, %m/%d/%y"), game_end_time.strftime("%I:%M%p EST %A, %m/%d/%y"))
 
-        unlocked_next_clue_description_string = 'The next clue is provided below. If you take a break and forget where you left off, you can always type: $game_my_last_clue into any ST text channel.'
+            emoji_trophy = discord.utils.get(card_settings.ctx.author.guild.emojis, name='trophy_icon')
+            emoji_chest = discord.utils.get(card_settings.ctx.author.guild.emojis, name='chest_icon')
 
-        time = datetime.datetime.utcnow()
+            leaderboard_data = await get_leaderboard_data()
+            number_of_competitors = len(leaderboard_data)
 
-        #Create the earned key card embed message
-        embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
-        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479478074702954496/crossedkeys.png')
-        embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
-        embed.add_field(name=str(emoji_trophy) + ' | Leaderboard', value=leaderboard_description_string, inline=False)
-        embed.add_field(name=':unlock: | You have unlocked the ability to use the next hidden key!', value=unlocked_next_clue_description_string, inline=False)
-        embed.add_field(name=':mag_right: | Clue for your next `$hiddenkey`', value=card_settings.clue_text, inline=False)
+            place = 1
+            for turtle in leaderboard_data:
+                print(turtle)
+                print(turtle[0])
+                print(card_settings.ctx.message.author.id)
+                if turtle[0] == card_settings.ctx.message.author.id:
+                    break
+                place+=1
+            else:
+                place = "```Unknown```"
+
+            leaderboard_description_string = "You finished ranked **#{0}** out of {1} participants and completed all {2} out of {2} game steps.".format(place,number_of_competitors,number_of_game_steps)
+
+            prize_string = str(emoji_chest) + ' | Game Prizes'
+            prize_description_string = 'Any earned prizes and rank placements will be awarded when the game ends.'
+
+
+            #Create the end game card embed message
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name=str(emoji_trophy) + ' | Final Leaderboard Placement', value=leaderboard_description_string, inline=False)
+            embed.add_field(name=gametime_string, value=gametime_description_string, inline=False)
+            embed.add_field(name=prize_string, value=prize_description_string, inline=False)
+
+        else:
+            #Format all the strings
+            description_string = "```$" + card_settings.keyname + "```" + "\n**Congratulations!** You have now fully `earned` the hidden key `$" + card_settings.keyname + "`!\n\n \n"
+            gamename_string = "Grand Game: " + card_settings.gamename
+
+            emoji_trophy = discord.utils.get(card_settings.ctx.author.guild.emojis, name='trophy_icon')
+
+            leaderboard_description_string = 'Your progress in game has been saved. The leaderboard display will update at the next game checkpoint.'
+
+            unlocked_next_clue_description_string = 'The next clue is provided below. If you take a break and forget where you left off, you can always type: $game_my_last_clue into any ST text channel.'
+
+            time = datetime.datetime.utcnow()
+
+            #Create the earned key card embed message
+            embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+            embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/192385258736451585/479478074702954496/crossedkeys.png')
+            embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+            embed.add_field(name=str(emoji_trophy) + ' | Leaderboard', value=leaderboard_description_string, inline=False)
+            embed.add_field(name=':unlock: | You have unlocked the ability to use the next hidden key!', value=unlocked_next_clue_description_string, inline=False)
+            embed.add_field(name=':mag_right: | Clue for your next `$hiddenkey`', value=card_settings.clue_text, inline=False)
+
+        #Add any images, files, attachments
+        self.add_any_links_files_or_image_to_embed(embed, card_settings)
+
 
         #Send it to the user
         card = await card_settings.ctx.author.send(embed=embed)
@@ -567,12 +684,16 @@ class GrandTurtleGameControls:
                 elif response['answer_status'] == 'Correct':
                     #If we are on the last question:
                     if current_substep_index + 1 == len(question_cards_settings):
+                        #Send Card to user
                         earned_key_card = await self.create_earned_key_card(earned_key_card_settings)
 
+                        #Update leaderboard data
                         complete_substep(ctx.author.id, question_cards_settings[current_substep_index].step_number, question_cards_settings[current_substep_index].substep_number)
-                        #Update leaderboard data and then post an updated leaderboard
                         await update_leaderboard_data(ctx.message.author.id)
-                        await self.update_leaderboard(ctx)
+
+                        #Update leaderboard
+                        leaderboard_data = await self.update_leaderboard(ctx)
+
                         key_is_at_end_state = True
                     else:
                         complete_substep(ctx.author.id, question_cards_settings[current_substep_index].step_number, question_cards_settings[current_substep_index].substep_number)
@@ -839,6 +960,36 @@ class GrandTurtleGameControls:
         game_start_time_est = game_start_time-datetime.timedelta(hours=4)
         game_end_time = game_info[4]
         game_end_time_est = game_end_time-datetime.timedelta(hours=4)
+        game_leaderboard_update_count = game_info[5]
+
+        ######################################################
+        #Currently the code assumes the following order from the resulting query
+        #discord_id name nickname current_farthest_sucessful_step_number timestamp_most_recent_progress
+        the_grand_game = []
+        the_grand_game = await get_leaderboard_data()
+
+        ########################################################
+
+        time = datetime.datetime.utcnow()
+        elapsed_time = time - game_start_time
+
+        #If we are within 15 minutes of the start of the game
+        if elapsed_time.total_seconds() < 1*60 and shutdown==False:
+            if game_leaderboard_update_count >= 2:
+                #Reset the leaderboard count
+                await set_leaderboard_update_count(0)
+            else:
+                #Increment leaderboard update count and return
+                await set_leaderboard_update_count(game_leaderboard_update_count+1)
+                return the_grand_game
+        elif elapsed_time.total_seconds() < 2*60 and shutdown==False:
+            if game_leaderboard_update_count >= 1:
+                #Reset the leaderboard count
+                await set_leaderboard_update_count(0)
+            else:
+                #Increment leaderboard update count and return
+                await set_leaderboard_update_count(game_leaderboard_update_count+1)
+                return the_grand_game
 
         #First try and see if we can find the current leaderboard
         try:
@@ -853,20 +1004,7 @@ class GrandTurtleGameControls:
             #initialize a new leaderboard
             await ctx.send('Leaderboard update failed. There is no linked, currently running leaderboard for Grand Game: {0}.'.format(game_name))
             print('Leaderboard update failed.')
-            return
-
-
-
-        ######################################################
-        #Currently the code assumes the following order from the resulting query
-        #discord_id name nickname current_farthest_sucessful_step_number timestamp_most_recent_progress
-        the_grand_game = []
-        the_grand_game = await get_leaderboard_data()
-
-        #with open("the_grand_game.txt") as textFile:
-        #    for row in textFile:
-        #        the_grand_game.append([str(s) for s in row.split()])
-        ########################################################
+            return the_grand_game
 
         #Leaderboard display options for fancy version
         last_step_number = 7
@@ -879,8 +1017,6 @@ class GrandTurtleGameControls:
             complete_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpf')
             incomplete_emoji = discord.utils.get(ctx.author.guild.emojis, name='hpe')
             finish_emoji = discord.utils.get(ctx.author.guild.emojis, name='finish')
-
-            time = datetime.datetime.utcnow()
 
             if incomplete_emoji is not None and complete_emoji is not None:
                 leaderboard_description_string ='**Icon Key**   '+ str(complete_emoji) + ': Step Completed   **||**   '+ str(incomplete_emoji) + ': Step Unfinished \n'
@@ -1023,6 +1159,8 @@ class GrandTurtleGameControls:
         except:
             pass
 
+        return the_grand_game
+
     @commands.command(hidden=True,brief='DEBUG ONLY - MOVES AUTHOR FORWARD ONE SUBSTEP')
     @commands.check(turtlecheck.if_seaguard)
     async def debug_complete_substep(self, ctx):
@@ -1041,6 +1179,7 @@ class GrandTurtleGameControls:
     async def start_the_game(self, ctx, game_name, game_steps, num_days=2, num_hours=0):
         game_id = await create_new_active_game(game_name, num_days, num_hours)
         await create_game_substeps_in_db(game_id, game_steps)
+        await reset_grand_game_placements()
         await self.initialize_leaderboard(ctx, game_id, game_name)
         await self.bot.change_presence(activity=discord.Game(name='Grand Game: {0}'.format(game_name)))
 
@@ -1063,7 +1202,7 @@ class GrandTurtleGameControls:
                 sleep_time = update_interval*60
                 await self.bot.change_presence(activity=discord.Game(name='[Ends in ~ {0}min] Grand Game: {1}'.format(int(intervals_remaining*update_interval), game_name)))
             elif (intervals_remaining*60 + remainder_in_seconds) > 60:
-                sleep_time = 60
+                sleep_time = 30
                 minutes, remainder = divmod(time_remaining.total_seconds(), 60)
                 await self.bot.change_presence(activity=discord.Game(name='[Ends in {0}min] Grand Game: {1}'.format(int(minutes), game_name)))
             else:
@@ -1081,21 +1220,75 @@ class GrandTurtleGameControls:
     @commands.command(hidden=True,brief='ADMIN ONLY')
     @commands.check(turtlecheck.if_admin)
     async def game_shutdown_now(self, ctx):
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
         game_info = await get_active_game_info()
         game_name = game_info[1]
         await self.shutdown_grand_game(ctx, game_name)
 
     async def shutdown_grand_game(self, ctx, game_name):
         print("Grand Game: {0} has closed.".format(game_name))
+
         leaderboard_channel_id = await get_active_leaderboard_channel_id()
         leaderboard_channel = self.bot.get_channel(leaderboard_channel_id)
-        await leaderboard_channel.send("```Grand Game: {0} has finished! No further progress will be added to the leaderboard.```".format(game_name))
-        await self.update_leaderboard(ctx, shutdown=True)
+        final_leaderboard_data = await self.update_leaderboard(ctx, shutdown=True)
+        game_id = get_active_game()
 
         #Finally, turn off ALL active games to be safe
         await set_all_games_inactive()
 
+        await leaderboard_channel.send("```Grand Game: {0} has finished! No further progress will be added to the leaderboard.```".format(game_name))
+        await self.bot.change_presence(activity=discord.Game(name='Finished Grand Game: {0}'.format(game_name)))
+
+        number_of_game_steps = get_number_of_game_steps(game_id)
+        place = 1
+        number_of_competitors = len(final_leaderboard_data)
+        for turtle in final_leaderboard_data:
+            print(turtle)
+            await set_grand_game_placement(turtle[0], place)
+            await self.create_endgame_card(ctx, game_name, turtle, place, number_of_competitors, number_of_game_steps)
+            place+=1
+
+    async def create_endgame_card(self, ctx, game_name, turtle, place, number_of_competitors, number_of_game_steps):
+        #Format all the strings
+        description_string = "```Grand Game: {0} has finished!```".format(game_name)
+        gamename_string = "Grand Game: " + game_name
+
+        emoji_trophy = discord.utils.get(ctx.author.guild.emojis, name='trophy_icon')
+        emoji_rank = discord.utils.get(ctx.author.guild.emojis, name='rank_icon')
+        emoji_chest = discord.utils.get(ctx.author.guild.emojis, name='chest_icon')
+
+        leaderboard_description_string = "You finished ranked **#{0}** out of {1} participants and completed {2} out of {3} game steps.".format(place,number_of_competitors,turtle[3],number_of_game_steps)
+
+        unlocked_grand_game_rank_emote_string = 'You have unlocked a rank finisher based on your placement in the game. To use this finisher in any ST text channel, enter the command `$game_rank`. There is a cooldown, so use your newfound powers wisely. Access to all rank finishers resets with the arrival of the next Grand Game.'
+
+        time = datetime.datetime.utcnow()
+
+        if place==1:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087907434397706/TurtleGamesGold.gif'
+        elif place==2:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087912891056128/TurtleGamesSilver.gif'
+        elif place==3:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087904359841792/TurtleGamesBronze.gif'
+        else:
+            image_url = 'https://cdn.discordapp.com/attachments/471547983859679232/487087909825150978/TurtleGamesParticipation.gif'
+
+        prize_string = str(emoji_chest) + ' | Game Prizes'
+        prize_description_string = 'If you earned an in-game prize based on your placement on the leaderboard, a game administrator will contact you soon to transfer your rewards.\n```Thanks for playing!```'
+
+
+        #Create the end game card embed message
+        embed = discord.Embed(description=description_string, colour=1155738, timestamp=time)
+        embed.set_thumbnail(url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+        embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
+        embed.add_field(name=str(emoji_trophy) + ' | Final Leaderboard Placement', value=leaderboard_description_string, inline=False)
+        embed.add_field(name=str(emoji_rank) + ' | You have unlocked a Grand Game rank emote!', value=unlocked_grand_game_rank_emote_string, inline=False)
+        embed.add_field(name=prize_string, value=prize_description_string, inline=False)
+
+        embed.set_image(url=image_url)
+
+        #Send it to the user
+        discord_handle_for_turtle = self.bot.get_user(turtle[0])
+        await discord_handle_for_turtle.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(GrandTurtleGameControls(bot))
@@ -1122,6 +1315,58 @@ async def set_all_games_inactive():
 
     cur = conn.cursor()
     sqlStr = "UPDATE turtle.grand_games SET is_active=FALSE WHERE is_active = TRUE;"
+    cur.execute(sqlStr)
+    conn.commit()
+
+async def reset_grand_game_placements():
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+    sqlStr = "UPDATE turtle.turtles SET most_recent_grand_game_placement=0;"
+    cur.execute(sqlStr)
+    conn.commit()
+
+async def set_grand_game_placement(discord_id, place):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+    sqlStr = "UPDATE turtle.turtles SET most_recent_grand_game_placement={1} WHERE discord_id ={0};".format(discord_id, place)
+    print(sqlStr)
+    cur.execute(sqlStr)
+    conn.commit()
+
+async def get_grand_game_placement(discord_id):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+    sqlStr = "SELECT most_recent_grand_game_placement FROM turtle.turtles WHERE discord_id={0};".format(discord_id)
+    print(sqlStr)
+    cur.execute(sqlStr)
+    conn.commit()
+    result = cur.fetchall()
+    try:
+        return result[0][0]
+    except:
+        return -1
+
+async def set_leaderboard_update_count(count=0):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+    sqlStr = "UPDATE turtle.grand_games SET leaderboard_update_count = {0} WHERE is_active = TRUE;".format(count)
+    print(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1315,6 +1560,24 @@ def get_active_step(discord_id):
     except:
         return 1
 
+def get_number_of_game_steps(game_id):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+
+    sqlStr = "SELECT max(step_id) FROM turtle.game_steps WHERE game_id = " + str(game_id) + ";"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        if result[0][0] is None:
+            return 1
+        number_of_steps =  result[0][0]
+        return number_of_steps
+    except:
+        return 1
 
 def get_active_substep(discord_id):
     game_id = get_active_game()

@@ -57,20 +57,40 @@ def has_unlocked_hidden_key(current_question_step):
         else:
             game_id = get_active_game()
             if game_id == -1:
-                await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let Rev or Renay know.```')
+                await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let a ST game admin know.```')
             else:
                 await ctx.message.author.send('```Hmmm, seem\'s like you might be ahead of the game. *Cough*```' + '```You haven\'t unlocked the ability to use that hidden key yet. To unlock it, make sure you have earned all prior keys.```')
             return False
     return commands.check(predicate)
 
-async def if_active_game(ctx):
+async def if_joined_active_game(ctx):
     game_id = get_active_game()
     if game_id == -1:
-        await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let Rev or Renay know.```')
+        await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let a ST game admin know.```')
         return False
     else:
-        return True
+        leaderboard_entry = check_if_joined_game_leaderboard(ctx.message.author.id)
+        if leaderboard_entry!=-1:
+            return True
+        else:
+            await ctx.message.author.send('```You need to formally join the game before you can begin - we need to give you the hint to find this key after all. \n*Shifty eyes*\nTo join a game, start with $game_join in any ST text channel.```')
+            return False
 
+
+def check_if_joined_game_leaderboard(discord_id):
+    game_id = get_active_game()
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+    cur = conn.cursor()
+    sqlStr = "SELECT * FROM turtle.the_grand_game_players WHERE discord_id={0} and game_id ={1};".format(discord_id,game_id)
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        return result[0][0]
+    except:
+        return -1
 
 def get_api_key(discord_id):
     try:

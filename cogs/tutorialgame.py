@@ -9,7 +9,7 @@ import turtle_credentials as tc
 from discord import NotFound
 
 
-class ExampleGrandGameControls:
+class TutorialGameControls:
     def __init__(self, bot):
         self.bot = bot
         self.GameControls = grandgame.GrandTurtleGameControls(self.bot)
@@ -34,38 +34,39 @@ class ExampleGrandGameControls:
     @commands.check(turtlecheck.if_seaguard )
     async def game_join(self, ctx):
         gamename = 'Tutorial'
-        steps = 5
+        steps = 6
         api_key_required = True
 
         join_settings = game_class.Join_Card_Settings(ctx, gamename,steps, api_key_required)
         join_settings.prize_list=["Learning How To Play"]
         join_settings.image_url='https://cdn.discordapp.com/attachments/471547983859679232/486011052161499136/Tutorial.png'
         join_settings.link_attachments = [('Game Guide','https://tinyurl.com/ST-Game-Guide'),('Cypher Tools','http://rumkin.com/tools/cipher/'),('Guild Wars 2 Wiki','http://wiki.guildwars2.com')]
-        join_settings.clue_text = '```Your first hidden key is the first private instance to house ST in GW2. Such were golden times.``````Remember: Your answer must be entered in a ST Discord text channel in the form $game_youranswerhere```'
+        join_settings.clue_text = '```Your first hidden key is the first private instance to house ST in GW2. Such were golden times.``` ```Remember, the actual hidden key must be entered in the form $game_youranswerhere. \nYou must enter your guess for the hidden key in a ST text channel (not a private message). \nThis is required for the bot to recognize your command correctly and also to remove your hidden key from prying eyes.```'
         await self.GameControls.add_turtle_to_game(ctx,join_settings)
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['game_gilded_hollow'])
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @commands.check(turtlecheck.if_joined_active_game)
-    async def game_testkey1(self, ctx, description=True):
+    @commands.cooldown(1,120,commands.BucketType.user)
+    async def game_gildedhollow(self, ctx, description=True):
         try:
             await ctx.message.delete()
         except:
             pass
 
         #Set overall hidden key paramaters
-        gamename ='Test Season'
-        keyname='game_testkey1'
+        gamename ='Tutorial'
+        keyname='game_gildedhollow'
         step_number = 1
         substeps=1
-        cooldown=5
+        cooldown=2
         timer=5
 
         start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
 
         earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'The next key is $game_testkey2.'
+        earned_key_card_settings.clue_text = 'The next hidden key is the title for core members of Siege Turtles (both in discord, and in game).'
 
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings)
 
@@ -73,7 +74,7 @@ class ExampleGrandGameControls:
     @commands.check(turtlecheck.if_seaguard)
     @commands.check(turtlecheck.if_api_key)
     @turtlecheck.has_unlocked_hidden_key(2)
-    async def game_testkey2(self, ctx, description=True):
+    async def game_seaguard(self, ctx, description=True):
         try:
             await ctx.message.delete()
         except:
@@ -288,6 +289,6 @@ class ExampleGrandGameControls:
         await self.GameControls.run_hidden_key(ctx, earned_key_card_settings)
 
 def setup(bot):
-    bot.add_cog(ExampleGrandGameControls(bot))
+    bot.add_cog(TutorialGameControls(bot))
 
 

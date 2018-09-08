@@ -11,7 +11,7 @@ import aiohttp
 
 from cogs.exceptions import APIError, APIInactiveError, APIInvalidKey, APIKeyError
 
-extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util', 'cogs.grandturtlegame', 'cogs.easter_egg', 'cogs.examplegame']
+extensions = ['cogs.voice', 'cogs.text', 'cogs.raid', 'cogs.api', 'cogs.util', 'cogs.grandturtlegame', 'cogs.easter_egg', 'cogs.tutorialgame']
 
 class TurtleBot(commands.Bot):
     def __init__(self):
@@ -33,7 +33,7 @@ class TurtleBot(commands.Bot):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             m, s = divmod(error.retry_after, 60)
-            await ctx.message.author.send('That command is still on cooldown. You can retry it in `{0:.0f} min` and `{1:.0f} s`.'.format(m, s))
+            await ctx.message.author.send('That command is still on cooldown. You can retry it in `{0:.0f}min and {1:.0f}s`.'.format(m, s))
         if isinstance(error, APIKeyError):
             await ctx.message.author.send(error)
         if isinstance(error, APIInactiveError):

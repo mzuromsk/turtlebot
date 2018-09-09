@@ -65,6 +65,8 @@ def has_unlocked_hidden_key(current_question_step):
 
 async def if_joined_active_game(ctx):
     game_id = get_active_game()
+    if ctx.message.content=="$help":
+        return True
     if game_id == -1:
         await ctx.message.author.send('```That hidden key belongs to a Grand Game that is not currently active. If you believe you\'ve received this message in error, let a ST game admin know.```')
         return False

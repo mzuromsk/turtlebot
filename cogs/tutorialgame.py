@@ -42,7 +42,7 @@ class TutorialGameControls:
         join_settings = game_class.Join_Card_Settings(ctx, gamename,steps, api_key_required)
         join_settings.prize_list=["Learning How To Play"]
         join_settings.image_url='https://cdn.discordapp.com/attachments/471547983859679232/486011052161499136/Tutorial.png'
-        join_settings.link_attachments = [('Game Guide','https://tinyurl.com/ST-Game-Guide'),('Cypher Tools','http://rumkin.com/tools/cipher/'),('Guild Wars 2 Wiki','http://wiki.guildwars2.com')]
+        join_settings.link_attachments = [('Tutorial Walkthrough','https://youtu.be/785cyBywYiQ'),('Cypher Tools','http://rumkin.com/tools/cipher/'),('Guild Wars 2 Wiki','http://wiki.guildwars2.com')]
         join_settings.clue_text = '```Your first hidden key is the first guild hall instance to house ST in GW2. Such were golden times.``` ```Remember, the actual hidden key must be entered in the form $key_youranswerhere. \nYou must enter your guess for the hidden key in a ST text channel (not a private message). \nThis is required for the bot to recognize your command correctly and also to remove your hidden key from prying eyes.```'
         await self.GameControls.add_turtle_to_game(ctx,join_settings)
 

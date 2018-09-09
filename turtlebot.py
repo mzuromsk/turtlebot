@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import time
 from discord.ext import commands
 
 #import turtle_credentials as tc
@@ -7,7 +8,11 @@ import turtle_credentials_phantom as tc
 
 import aiohttp
 
+import logging
 
+timestring = time.strftime("%m-%d-%Y_%I_%M%p")
+
+logging.basicConfig(filename='logs/turtlebot_{0}.log'.format(timestring),level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 
 from cogs.exceptions import APIError, APIInactiveError, APIInvalidKey, APIKeyError
 
@@ -28,9 +33,12 @@ class TurtleBot(commands.Bot):
 
     async def on_ready(self):
         print('Connected to the server!')
+        logging.info('Connected to the server!')
         print('Username: {0.name}\nID: {0.id}'.format(self.user))
+        logging.info('Username: {0.name}\nID: {0.id}'.format(self.user))
 
     async def on_command_error(self, ctx, error):
+        logging.info("Error for {}: {}".format(ctx.message.author.name,error))
         if isinstance(error, commands.CommandOnCooldown):
             m, s = divmod(error.retry_after, 60)
             await ctx.message.author.send('That command is still on cooldown. You can retry it in `{0:.0f}min and {1:.0f}s`.'.format(m, s))
@@ -45,12 +53,19 @@ class TurtleBot(commands.Bot):
         raise error
 
     async def on_message(self, message):
+        if message.content.startswith('$'):
+            logging.info('{} entered command {}'.format(message.author.name, message.content))
         if not message.author.bot:
             await self.process_commands(message)
         if message.content.startswith('$game'):
             try:
                 await message.delete()
-                await message.author.send('You entered the following game/hidden key command: `{0}`.```If this was an attempt at finding a hidden key, and you were succesful, the bot will message you with the next game card. If not, feel free to try again.```'.format(message.content))
+            except:
+                return
+        if message.content.startswith('$key'):
+            try:
+                await message.delete()
+                await message.author.send('You entered the following potential hidden key command: `{0}`.```If this was a correct hidden key, the bot will either message you with the next game card or its cooldown. If not, feel free to try again.```'.format(message.content))
             except:
                 return
 

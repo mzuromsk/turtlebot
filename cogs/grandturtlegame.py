@@ -10,6 +10,9 @@ import turtle_credentials as tc
 from discord import NotFound
 import regex
 
+import logging
+logger = logging.getLogger(__name__)
+
 class GrandTurtleGameControls:
     def __init__(self, bot):
         self.bot = bot
@@ -32,19 +35,8 @@ class GrandTurtleGameControls:
         game_name = game_info[1]
         await self.bot.change_presence(activity=discord.Game(name='Grand Game: {0}'.format(game_name)))
 
-    @commands.command(hidden=True,brief='ADMIN ONLY')
-    @commands.check(turtlecheck.if_admin)
-    async def game_start(self, ctx):
-        #You must hand list the number of steps and substeps
-        #Create a list of length step, where each step value is the number of substeps in that step
-        game_steps = [1,4,1,1,2,1,1]
-        game_name = "Testing setup"
-        num_days = 0
-        num_hours = 1
-        await self.start_the_game(ctx, game_name, game_steps, num_days, num_hours)
-
     @commands.command(brief="Briefly proclaim your Grand Game prowess. [Cooldown: 5 min]")
-    #@commands.cooldown(1,300,commands.BucketType.user)
+    @commands.cooldown(1,300,commands.BucketType.user)
     async def game_rank(self,ctx):
         try:
             await ctx.message.delete()
@@ -109,74 +101,9 @@ class GrandTurtleGameControls:
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
-    @commands.check(turtlecheck.if_api_key)
-    async def game_test_hiddenkey(self, ctx, description=True):
-        try:
-            await ctx.message.delete()
-        except:
-            pass
-
-        #Set overall hidden key paramaters
-        gamename ='Divinity\'s Reach Pre-Season'
-        keyname='game_test_hiddenkey'
-        step_number = 1
-        substeps=4
-        cooldown=5
-        timer=5
-
-        start_card_settings = game_class.Start_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-
-        substep_number=1
-        step_1_settings = game_class.Choose_One_Card_Settings(ctx, gamename, keyname, step_number, substep_number, substeps, cooldown, timer, description)
-        step_1_settings.clue_text='Take a load off and wander through the gardens of the Central Plaza. Some might say the Gods themselves tend to the garden, but which of the gods “fought the hardest and rightfully earned their spot among the six” (More of a Joke about GW: Nightfall)'
-        step_1_settings.emoji_answer_key_text = ['Dwayna','Melandru','Kormir','Lyssa','Grenth','Balthazar']
-        step_1_settings.emoji = ['\U0001F1E9','\U0001F1F2','\U0001F1F0','\U0001F1F1','\U0001F1EC','\U0001F1E7']
-        step_1_settings.correct_item_in_list = 3
-        step_1_settings.timer=5
-        step_1_settings.image_url='https://pbs.twimg.com/media/DlXrMb1W0AELBta.jpg:large'
-        step_1_settings.file_attachments=['audio/nogodpleaseno.mp3']
-        step_1_settings.link_attachments=[('Trailer','https://youtu.be/jYybrOmEgRU'),('Some picture','https://imgur.com/gallery/LLG4R')]
-
-        substep_number=2
-        step_2_settings = game_class.Combination_Card_Settings(ctx, gamename, keyname, step_number, substep_number, substeps, cooldown, timer, description)
-        step_2_settings.clue_text='In order of decreasing cleave damage.'
-        step_2_settings.icon_key_per_line = 2
-        step_2_settings.file_attachments=['audio/nogodpleaseno.mp3']
-        emoji_guard = discord.utils.get(ctx.author.guild.emojis, name='Guardian_icon')
-        emoji_thief = discord.utils.get(ctx.author.guild.emojis, name='Thief_icon')
-
-        step_2_settings.emoji_answer_key_text = ['Guardian','Thief','Fire Elementalist','Water Elementalist']
-        step_2_settings.emoji = [emoji_guard,emoji_thief,'\U0001F525','\U0001F4A7']
-        step_2_settings.correct_combination= [3,1,2,4]
-        step_2_settings.timer=1
-
-        substep_number=3
-        step_3_settings = game_class.Text_Card_Settings(ctx, gamename, keyname, step_number, substep_number, substeps, cooldown, timer, description)
-        step_3_settings.clue_text='Exploring near Uzolan’s Mechanical Orchestra you\'ll find yourself wondering \"how do you walk on these stones all day long?\"'
-        step_3_settings.correct_answer_text=[('exact','You get used to it.'),('keyword','used')]
-        step_3_settings.link_attachments=[('Trailer','https://youtu.be/jYybrOmEgRU'),('Some picture','https://imgur.com/gallery/LLG4R')]
-
-        substep_number=4
-        step_4_settings = game_class.Get_In_Game_Card_Settings(ctx, gamename, keyname, substep_number, substeps, cooldown, timer, description)
-        step_4_settings.clue_text='You were gonna try for the jailbreak, but the key you found is complete garbage.'
-        #step_4_settings.item_id=23794
-        step_4_settings.item_id=46733
-        step_4_settings.required_amount=5000
-
-        earned_key_card_settings = game_class.Earned_Key_Card_Settings(ctx, gamename, keyname, step_number, substeps, cooldown, timer)
-        earned_key_card_settings.clue_text = 'Not feeling very creative. Go find the next hidden key.'
-
-        question_cards_settings = [step_1_settings, step_2_settings,step_3_settings, step_4_settings]
-
-        await self.run_hidden_key(ctx, earned_key_card_settings, start_card_settings, question_cards_settings)
-
-
-    @commands.command(hidden=True)
-    @commands.check(turtlecheck.if_seaguard)
     async def print_active_leaderboard_message_id(self, ctx):
         #await ctx.author.send("active leaderboard id message id:")
         await ctx.author.send(get_active_leaderboard_message_id())
-
 
     @commands.command(hidden=True)
     @commands.check(turtlecheck.if_seaguard)
@@ -230,6 +157,7 @@ class GrandTurtleGameControls:
 
         #Send "Joined Game" Card
         joined_game_card = await self.create_joined_game_card(ctx, join_settings)
+        logging.info("{} joined the game: {}".format(ctx.author.name,join_settings.gamename))
 
     async def create_joined_game_card(self, ctx, card_settings):
         #Format all the strings
@@ -246,18 +174,12 @@ class GrandTurtleGameControls:
         embed.set_footer(text=gamename_string, icon_url='https://cdn.discordapp.com/attachments/473250851876765699/473597224937324554/unknown.png')
 
         question_string = ":key2: | " + str(card_settings.steps) + " `$hiddenkeys`"
-        question_description_string = "This game has " + str(card_settings.steps) + " `$hiddenkeys`. To finish the game, you must discover and earn all " + str(card_settings.steps) + " in order (a later key only works if you have earned all preceding keys). ```All hidden keys are of the form: $game_insertnameofkeyhere.```  ```Some keys you will earn merely from discovering them, others may require you to answer followup questions to earn.```\n"
+        question_description_string = "This game has " + str(card_settings.steps) + " `$hiddenkeys`. To finish the game, you must discover and earn all " + str(card_settings.steps) + " in order (a later key only works if you have earned all preceding keys). ```All hidden keys are of the form: $key_insertnameofkeyhere.```  ```Some keys you will earn merely from discovering them, others may require you to answer followup questions to earn.```\n"
         embed.add_field(name=question_string, value=question_description_string, inline=False)
 
-##        emoji_api = discord.utils.get(ctx.author.guild.emojis, name='api_icon')
         emoji_chest = discord.utils.get(ctx.author.guild.emojis, name='chest_icon')
         emoji_trophy = discord.utils.get(ctx.author.guild.emojis, name='trophy_icon')
         emoji_golem = discord.utils.get(ctx.author.guild.emojis, name='blue_golem')
-
-##        if card_settings.api_key_required:
-##            api_string = str(emoji_api) + ' | GW2 API Key'
-##            api_description_string = 'This game requires a GW2 API key to play. To set an API key, use `$set_api_key`. For help, use `$help_api_key`.'
-##            embed.add_field(name=api_string, value=api_description_string, inline=False)
 
         if card_settings.image_url != '' and card_settings.image_url is not None:
            embed.set_image(url=card_settings.image_url)
@@ -291,7 +213,6 @@ class GrandTurtleGameControls:
             embed.add_field(name=help_string, value=help_description_string, inline = False)
 
         embed.add_field(name=':mag_right: | Clue for your first `$hiddenkey`', value=card_settings.clue_text, inline=False)
-
 
         #Create the start card embed message
 
@@ -513,6 +434,8 @@ class GrandTurtleGameControls:
 
         #Send a card with a earned-key card with a clue for the next key
         if card_settings.step_number==number_of_game_steps:
+            logging.info("{0} FINISHED game {1}".format(card_settings.ctx.message.author.name, card_settings.gamename))
+
             #Format all the strings
             description_string = "```Congratulations! \nYou have finished Grand Game: \n{0}```".format(card_settings.gamename)
             gamename_string = "Grand Game: " + card_settings.gamename
@@ -532,9 +455,6 @@ class GrandTurtleGameControls:
 
             place = 1
             for turtle in leaderboard_data:
-                print(turtle)
-                print(turtle[0])
-                print(card_settings.ctx.message.author.id)
                 if turtle[0] == card_settings.ctx.message.author.id:
                     break
                 place+=1
@@ -637,6 +557,7 @@ class GrandTurtleGameControls:
             #Send the earned card for this hidden key
                 try:
                     earned_key_card = await self.create_earned_key_card(earned_key_card_settings)
+                    logging.info('{} has earned key {}'.format(ctx.message.author.name,earned_key_card_settings.keyname))
                     complete_substep(ctx.author.id, earned_key_card_settings.step_number, 1)
                 except discord.Forbidden:
                     return await ctx.send('I do not have permission to DM you. Please enable this in the future.')
@@ -682,7 +603,7 @@ class GrandTurtleGameControls:
             key_is_at_end_state = False
 
             while not key_is_at_end_state:
-                print("{0} is on game step {1} substep {2}".format(ctx.author.name,question_cards_settings[current_substep_index].step_number, question_cards_settings[current_substep_index].substep_number))
+                logging.info("{0} is on game step {1} substep {2}".format(ctx.author.name,question_cards_settings[current_substep_index].step_number, question_cards_settings[current_substep_index].substep_number))
                 response = await self.check_if_question_answer_is_correct(question_cards_settings[current_substep_index], start_time)
                 if response['bot_response_message'] != '':
                     await ctx.author.send(response['bot_response_message'])
@@ -695,6 +616,7 @@ class GrandTurtleGameControls:
                     if current_substep_index + 1 == len(question_cards_settings):
                         #Send Card to user
                         earned_key_card = await self.create_earned_key_card(earned_key_card_settings)
+                        logging.info('{} has earned key {}'.format(ctx.message.author.name,earned_key_card_settings.keyname))
 
                         #Update leaderboard data
                         complete_substep(ctx.author.id, question_cards_settings[current_substep_index].step_number, question_cards_settings[current_substep_index].substep_number)
@@ -738,6 +660,7 @@ class GrandTurtleGameControls:
             bot_response_message = '```You did not answer within the time limit.```' + self.format_retry_message(start_time, question_card_settings.keyname, question_card_settings.cooldown)
             return{ 'answer_status': 'TimeoutError', 'bot_response_message': bot_response_message}
         else:
+            logging.info('{2} | Choose One Question | The clicked answer: {0} The current expected correct answer: {1}'.format(str(pick_one_answer).encode("UTF-8"),str(question_card_settings.emoji[question_card_settings.correct_item_in_list-1]).encode("UTF-8"),question_card_settings.ctx.message.author.name))
             if str(pick_one_answer) == question_card_settings.emoji[question_card_settings.correct_item_in_list-1]:
                 bot_response_message = '```You were correct!```'
                 return{ 'answer_status': 'Correct', 'bot_response_message': bot_response_message}
@@ -766,7 +689,7 @@ class GrandTurtleGameControls:
                 return{ 'answer_status': 'TimeoutError', 'bot_response_message': bot_response_message}
             else:
                 time_until_message_disappears = question_card_settings.timer_between_combo_clicks
-                print('The clicked answer: {0} The current expected correct answer: {1}'.format(str(answer),str(current_correct_answer)))
+                logging.info('{2} | Combination Question | The clicked answer: {0} The current expected correct answer: {1}'.format(str(answer).encode("UTF-8"),str(current_correct_answer).encode("UTF-8"),question_card_settings.ctx.message.author.name))
 
                 if str(answer) == str(current_correct_answer):
                     tumbler_count = tumbler_count + 1
@@ -800,14 +723,18 @@ class GrandTurtleGameControls:
             for item in question_card_settings.correct_answer_text:
                 if item[0]=='exact':
                     if self.text_strip_punctuation_and_cleanup(text_answer.content) == self.text_strip_punctuation_and_cleanup(item[1]):
-                        print("Exact match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1]))
+                        logging.info("{2} | Exact match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1], question_card_settings.ctx.message.author.name))
                         matched_correct_answer=True
                         break
+                    else:
+                        logging.info("{2} | FAILED Exact match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1], question_card_settings.ctx.message.author.name))
                 elif item[0]=='keyword':
                     if self.text_strip_punctuation_and_cleanup(item[1]) in self.text_strip_punctuation_and_cleanup(text_answer.content):
-                        print("Keyword match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1]))
+                        logging.info("{2} | Keyword match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1], question_card_settings.ctx.message.author.name))
                         matched_correct_answer=True
                         break
+                    else:
+                        logging.info("{2} | FAILED Keyword match for \"{0}\" with answer key \"{1}\"".format(text_answer.content, item[1], question_card_settings.ctx.message.author.name))
 
             if matched_correct_answer:
                 bot_response_message = '```You were correct!```'
@@ -828,6 +755,7 @@ class GrandTurtleGameControls:
             return{ 'answer_status': 'TimeoutError', 'bot_response_message': bot_response_message}
         else:
             if str(ans) == '✅':
+                logging.info("{} began an account scan on question Step {} Substep {} for item {}".format(question_card_settings.ctx.author.name,question_card_settings.step_number, question_card_settings.substep_number,question_card_settings.item_id))
                 with question_card_settings.ctx.author.dm_channel.typing():
                     timing_card = await self.create_timing_card(question_card_settings)
 
@@ -844,13 +772,16 @@ class GrandTurtleGameControls:
                     if total >= question_card_settings.required_amount:
                         search_result_card = await self.create_search_results_card(question_card_settings, output, item_result)
                         bot_response_message = '```You had the necessary number of the correct item ({0}) on your account. Well done!```'.format(item_result["name"])
+                        logging.info('{} received scan response: '.format(question_card_settings.ctx.message.author.name) + bot_response_message)
                         return{ 'answer_status': 'Correct', 'bot_response_message': bot_response_message}
                     elif total > 0:
                         search_result_card = await self.create_search_results_card(question_card_settings, output, item_result)
                         bot_response_message = "```I\'m sorry, although you did have the correct item ({0}), you did not have the necessary amount.```".format(item_result["name"]) + self.format_retry_message(start_time, question_card_settings.keyname, question_card_settings.cooldown)
+                        logging.info('{} received scan response: '.format(question_card_settings.ctx.message.author.name) + bot_response_message)
                         return{ 'answer_status': 'Incorrect', 'bot_response_message': bot_response_message}
                     elif total ==0:
                         bot_response_message = "```I\'m sorry, you did not have the correct item. \nWe have peered into the mists and did not find the correct item anywhere on your account.```" + self.format_retry_message(start_time, question_card_settings.keyname, question_card_settings.cooldown)
+                        logging.info('{} received scan response: '.format(question_card_settings.ctx.message.author.name) + bot_response_message)
                         return{ 'answer_status': 'Incorrect', 'bot_response_message': bot_response_message}
 
             if str(ans) == '❌':
@@ -934,7 +865,7 @@ class GrandTurtleGameControls:
         cleaned_string = remove.sub(u"", string).strip().lower()
         return cleaned_string
 
-    @commands.command(hidden=True,brief='Dhuum monologue distilled to text. For mere mortals.')
+    @commands.command(hidden=True,brief='Initialize a new leaderboard in this location.')
     @commands.check(turtlecheck.if_seaguard)
     async def game_initialize_leaderboard(self, ctx, name='Grand Siege Turtle Games'):
         #Make sure the message gets deleted before someone else can see it (in case the general flag doesn't catch it)
@@ -991,8 +922,8 @@ class GrandTurtleGameControls:
         time = datetime.datetime.utcnow()
         elapsed_time = time - game_start_time
 
-        #If we are within 15 minutes of the start of the game
-        if elapsed_time.total_seconds() < 1*60 and shutdown==False:
+        #If we are within 10 minutes of the start of the game
+        if elapsed_time.total_seconds() < 10*60 and shutdown==False:
             if game_leaderboard_update_count >= 2:
                 #Reset the leaderboard count
                 await set_leaderboard_update_count(0)
@@ -1000,7 +931,7 @@ class GrandTurtleGameControls:
                 #Increment leaderboard update count and return
                 await set_leaderboard_update_count(game_leaderboard_update_count+1)
                 return the_grand_game
-        elif elapsed_time.total_seconds() < 2*60 and shutdown==False:
+        elif elapsed_time.total_seconds() < 30*60 and shutdown==False:
             if game_leaderboard_update_count >= 1:
                 #Reset the leaderboard count
                 await set_leaderboard_update_count(0)
@@ -1021,7 +952,7 @@ class GrandTurtleGameControls:
         except:
             #initialize a new leaderboard
             await ctx.send('Leaderboard update failed. There is no linked, currently running leaderboard for Grand Game: {0}.'.format(game_name))
-            print('Leaderboard update failed.')
+            logging.warning('Leaderboard update failed.')
             return the_grand_game
 
         #Leaderboard display options for fancy version
@@ -1167,9 +1098,9 @@ class GrandTurtleGameControls:
 
             try:
                 await leaderboard.edit(content='Updating leaderboard...', embed=None)
-                print('Updating leaderboard...')
+                logging.info('Updating leaderboard...')
                 await leaderboard.edit(embed=embed, content=None)
-                print('Leaderboard updated.')
+                logging.info('Leaderboard updated.')
             except:
                 await ctx.send(embed=embed)
         try:
@@ -1180,7 +1111,7 @@ class GrandTurtleGameControls:
         return the_grand_game
 
     @commands.command(hidden=True,brief='DEBUG ONLY - MOVES AUTHOR FORWARD ONE SUBSTEP')
-    @commands.check(turtlecheck.if_seaguard)
+    @commands.check(turtlecheck.if_admin)
     async def debug_complete_substep(self, ctx):
         player = ctx.author.name
         discord_id = ctx.author.id
@@ -1234,7 +1165,7 @@ class GrandTurtleGameControls:
                     sleep_time = remainder_in_seconds+1
                 await self.bot.change_presence(activity=discord.Game(name='[Ends in {0}s] Grand Game: {1}'.format(int(remainder_in_seconds), game_name)))
 
-            print("Grand Game: {0} ends in {1}".format(game_name,time_remaining))
+            logging.info("Grand Game: {0} ends in {1}".format(game_name,time_remaining))
             await asyncio.sleep(sleep_time)
             time = datetime.datetime.utcnow()
 
@@ -1253,13 +1184,13 @@ class GrandTurtleGameControls:
         await self.shutdown_grand_game(ctx, game_name)
 
     async def shutdown_grand_game(self, ctx, game_name):
-        print("Grand Game: {0} has closed.".format(game_name))
+        logging.info("Grand Game: {0} has closed.".format(game_name))
 
         leaderboard_channel_id = await get_active_leaderboard_channel_id()
         leaderboard_channel = self.bot.get_channel(leaderboard_channel_id)
         final_leaderboard_data = await self.update_leaderboard(ctx, shutdown=True)
         game_id = get_active_game()
-
+        await asyncio.sleep(2)
         #Finally, turn off ALL active games to be safe
         await set_all_games_inactive()
 
@@ -1270,7 +1201,6 @@ class GrandTurtleGameControls:
         place = 1
         number_of_competitors = len(final_leaderboard_data)
         for turtle in final_leaderboard_data:
-            print(turtle)
             await set_grand_game_placement(turtle[0], place)
             await self.create_endgame_card(ctx, game_name, turtle, place, number_of_competitors, number_of_game_steps)
             place+=1
@@ -1364,7 +1294,7 @@ async def set_grand_game_placement(discord_id, place):
 
     cur = conn.cursor()
     sqlStr = "UPDATE turtle.turtles SET most_recent_grand_game_placement={1} WHERE discord_id ={0};".format(discord_id, place)
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1376,7 +1306,7 @@ async def get_grand_game_placement(discord_id):
 
     cur = conn.cursor()
     sqlStr = "SELECT most_recent_grand_game_placement FROM turtle.turtles WHERE discord_id={0};".format(discord_id)
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
     result = cur.fetchall()
@@ -1393,7 +1323,7 @@ async def set_leaderboard_update_count(count=0):
 
     cur = conn.cursor()
     sqlStr = "UPDATE turtle.grand_games SET leaderboard_update_count = {0} WHERE is_active = TRUE;".format(count)
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1427,6 +1357,7 @@ async def create_game_substeps_in_db(game_id, game_steps):
     cur = conn.cursor()
     for step in range(len(game_steps)):
         sqlStr = "INSERT INTO turtle.game_steps (game_id, step_id, substeps) VALUES (" + str(game_id) + ", " + str(step+1) + ", " + str(game_steps[step])+");"
+        logging.debug(sqlStr)
         cur.execute(sqlStr)
         conn.commit()
 
@@ -1446,7 +1377,6 @@ async def get_active_game_info():
 
 async def get_active_leaderboard_message_id():
     game_id = get_active_game()
-    print('The active game_id is {0}'.format(game_id))
     try:
         conn
     except NameError:
@@ -1485,7 +1415,7 @@ async def save_initialized_leaderboard_to_database(ctx, leaderboard_channel_id, 
         conn = tc.get_conn()
     cur = conn.cursor()
     sqlStr = "INSERT INTO turtle.game_messages (game_id, channel_id, message_id, message_name) VALUES (" + str(game_id) + ", " + str(leaderboard_channel_id) + ", "+ str(leaderboard_message_id) + ", '" + name + "');"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1497,7 +1427,7 @@ async def delete_active_leaderboard_from_database(ctx):
         conn = tc.get_conn()
     cur = conn.cursor()
     sqlStr = "DELETE FROM turtle.game_messages WHERE game_id = " + str(game_id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1509,15 +1439,15 @@ async def delete_turtle_from_all_game_progress_databases(ctx):
         conn = tc.get_conn()
     cur = conn.cursor()
     sqlStr = "DELETE FROM turtle.game_substep_completions WHERE game_id = " + str(game_id) + " AND discord_id = " + str(ctx.message.author.id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
     sqlStr = "DELETE FROM turtle.game_step_completions WHERE game_id = " + str(game_id) + " AND discord_id = " + str(ctx.message.author.id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
     sqlStr = "DELETE FROM turtle.the_grand_game_players WHERE game_id = " + str(game_id) + " AND discord_id = " + str(ctx.message.author.id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1534,7 +1464,7 @@ def complete_substep(discord_id, step_id, substep_id):
 
     ###FIRST, COMPLETE THE PLAYER'S SPECIFIED SUBSTEP
     sqlStr = "INSERT INTO turtle.game_substep_completions (discord_id, game_id, step_id, substep_id, time_completed) VALUES (" + str(discord_id) + ", " + str(game_id) + ", " + str(step_id) + ", " + str(substep_id) + ", NOW());"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1542,7 +1472,7 @@ def complete_substep(discord_id, step_id, substep_id):
 
     #gather max substep completed
     sqlStr = "SELECT max(substep_id) from turtle.game_substep_completions WHERE game_id = " + str(game_id) + " AND discord_id = " + str(discord_id) + " AND step_id = " + str(step_id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     result = cur.fetchall()
     #TODO: make this fail gracefully, but for now I think I just want the error to print to console
@@ -1550,7 +1480,7 @@ def complete_substep(discord_id, step_id, substep_id):
 
     #gather the max substep for this step
     sqlStr = "SELECT substeps FROM turtle.game_steps WHERE game_id = " + str(game_id) + " AND step_id = " + str(step_id) + ";"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     result = cur.fetchall()
     #TODO:  fail gracefully
@@ -1560,12 +1490,31 @@ def complete_substep(discord_id, step_id, substep_id):
     if num_substeps == max_substep:
         #Step completed!  Update the step table
         sqlStr = "INSERT INTO turtle.game_step_completions (discord_id, game_id, step_id, time_completed) VALUES (" + str(discord_id) + ", " + str(game_id) + ", "+ str(step_id) + ", NOW());"
-        print(sqlStr)
+        logging.debug(sqlStr)
         cur.execute(sqlStr)
         conn.commit()
     #else player has more substeps, so don't write a step_completion
 
     return True
+
+def get_number_of_game_steps(game_id):
+    try:
+        conn
+    except NameError:
+        conn = tc.get_conn()
+
+    cur = conn.cursor()
+
+    sqlStr = "SELECT max(step_id) FROM turtle.game_steps WHERE game_id = " + str(game_id) + ";"
+    cur.execute(sqlStr)
+    result = cur.fetchall()
+    try:
+        if result[0][0] is None:
+            return 1
+        number_of_steps =  result[0][0]
+        return number_of_steps
+    except:
+        return 1
 
 def get_active_step(discord_id):
     game_id = get_active_game()
@@ -1584,25 +1533,6 @@ def get_active_step(discord_id):
             return 1  #If no compelted steps, active step is 1
         max_completed_step =  result[0][0]
         return max_completed_step + 1 # active step is 1 more than max_completed_step
-    except:
-        return 1
-
-def get_number_of_game_steps(game_id):
-    try:
-        conn
-    except NameError:
-        conn = tc.get_conn()
-
-    cur = conn.cursor()
-
-    sqlStr = "SELECT max(step_id) FROM turtle.game_steps WHERE game_id = " + str(game_id) + ";"
-    cur.execute(sqlStr)
-    result = cur.fetchall()
-    try:
-        if result[0][0] is None:
-            return 1
-        number_of_steps =  result[0][0]
-        return number_of_steps
     except:
         return 1
 
@@ -1641,7 +1571,7 @@ async def update_leaderboard_data(discord_id):
 
     cur = conn.cursor()
     sqlStr = "UPDATE turtle.the_grand_game_players SET last_completed_step={0}, last_completed_step_time=NOW() WHERE discord_id={1} AND game_id={2};".format(last_completed_step,discord_id,game_id)
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
@@ -1655,7 +1585,7 @@ async def get_leaderboard_data():
     cur = conn.cursor()
     #discord_id name nickname current_farthest_sucessful_step_number timestamp_most_recent_progress
     sqlStr = "SELECT discord_id, name, nickname, last_completed_step, last_completed_step_time FROM turtle.the_grand_game_players WHERE game_id={0} ORDER BY last_completed_step DESC, last_completed_step_time ASC;".format(game_id)
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     result = cur.fetchall()
     return result
@@ -1675,7 +1605,7 @@ async def add_turtle_to_leaderboard(ctx):
 
     cur = conn.cursor()
     sqlStr = "INSERT INTO turtle.the_grand_game_players (game_id, discord_id, name, nickname, discriminator, last_completed_step, last_completed_step_time, is_active) VALUES (" + str(game_id) + ", " + str(ctx.message.author.id) + ", '" + str(ctx.message.author.name) + "', '" + str(nickname) + "', '" + str(ctx.message.author.discriminator) + "', " + str(0) + ", NOW(), " + str(active_state) + ");"
-    print(sqlStr)
+    logging.debug(sqlStr)
     cur.execute(sqlStr)
     conn.commit()
 
